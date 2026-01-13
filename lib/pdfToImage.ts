@@ -1,6 +1,8 @@
+import { logger } from './logger';
+
 export async function pdfToImage(file: File): Promise<File> {
   try {
-    console.log('Starting PDF conversion for:', file.name);
+    logger.log('Starting PDF conversion for:', file.name);
     
     // Dynamically import pdfjs-dist only on the client side
     const pdfjsLib = await import('pdfjs-dist');
@@ -10,21 +12,21 @@ export async function pdfToImage(file: File): Promise<File> {
     
     // Read the PDF file
     const arrayBuffer = await file.arrayBuffer();
-    console.log('PDF file read successfully, size:', arrayBuffer.byteLength);
+    logger.log('PDF file read successfully, size:', arrayBuffer.byteLength);
     
     // Load the PDF document
     const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
     const pdf = await loadingTask.promise;
-    console.log('PDF loaded, pages:', pdf.numPages);
+    logger.log('PDF loaded, pages:', pdf.numPages);
     
     // Get the first page
     const page = await pdf.getPage(1);
-    console.log('Page 1 loaded');
+    logger.log('Page 1 loaded');
     
     // Set up canvas for rendering
     const scale = 2.0; // Higher scale for better quality
     const viewport = page.getViewport({ scale });
-    console.log('Viewport:', viewport.width, 'x', viewport.height);
+    logger.log('Viewport:', viewport.width, 'x', viewport.height);
     
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -37,18 +39,19 @@ export async function pdfToImage(file: File): Promise<File> {
     canvas.height = viewport.height;
     
     // Render the page to canvas
-    console.log('Starting page render...');
+    logger.log('Starting page render...');
     await page.render({
       canvasContext: context,
-      viewport: viewport
-    }).promise;
-    console.log('Page rendered successfully');
+      viewport: viewport,
+      canvas: canvas
+    } as any).promise;
+    logger.log('Page rendered successfully');
     
     // Convert canvas to blob
     const blob = await new Promise<Blob>((resolve, reject) => {
       canvas.toBlob((blob) => {
         if (blob) {
-          console.log('Blob created, size:', blob.size);
+          logger.log('Blob created, size:', blob.size);
           resolve(blob);
         } else {
           reject(new Error('Failed to convert canvas to blob'));
@@ -62,10 +65,10 @@ export async function pdfToImage(file: File): Promise<File> {
       lastModified: Date.now()
     });
     
-    console.log('PDF converted to image successfully');
+    logger.log('PDF converted to image successfully');
     return imageFile;
   } catch (error) {
-    console.error('Error converting PDF to image:', error);
+    logger.error('Error converting PDF to image:', error);
     // Re-throw with more context
     if (error instanceof Error) {
       throw new Error(`PDF conversion failed: ${error.message}`);

@@ -41,10 +41,16 @@ cd pdf-to-workout
 npm install
 ```
 
-3. Create a `.env.local` file in the root directory and add your Google Gemini API key:
+3. Copy `.env.local.example` to `.env.local` and add your Google Gemini API key:
+
+```bash
+cp .env.local.example .env.local
+```
+
+Then edit `.env.local` and add your API key:
 
 ```env
-GOOGLE_GEMINI_API_KEY=your_api_key_here
+GOOGLE_GEMINI_API_KEY=your_actual_api_key_here
 ```
 
 4. Run the development server:
@@ -201,6 +207,38 @@ The app automatically detects whether your workout plan is:
 - If you hit rate limits, wait a few minutes before trying again
 - Consider upgrading to a paid plan for higher limits
 
+## Deployment
+
+Ready to deploy to production? See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions on deploying to:
+- ✅ **Vercel** (Recommended - one-click deploy)
+- Netlify
+- Railway
+- Self-hosted
+
+### Quick Deploy to Vercel
+
+1. Push your code to GitHub
+2. Import project to [Vercel](https://vercel.com/new)
+3. Add `GOOGLE_GEMINI_API_KEY` environment variable
+4. Deploy!
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete instructions.
+
+## PWA Installation
+
+This app is a Progressive Web App (PWA) and can be installed on mobile devices:
+
+**iOS:**
+1. Open in Safari
+2. Tap Share button
+3. Tap "Add to Home Screen"
+
+**Android:**
+1. Open in Chrome
+2. Tap the "Install" prompt or menu → "Install app"
+
+See [PWA_SETUP.md](./PWA_SETUP.md) for customization options.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
@@ -214,3 +252,4 @@ MIT License - feel free to use this project for personal or commercial purposes.
 - Built with Next.js and Tailwind CSS
 - AI-powered by Google Gemini
 - Icons by Lucide React
+- PDF processing by PDF.js
