@@ -1,36 +1,216 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Workout Tracker - AI-Powered Fitness Companion
+
+Transform your workout plans into interactive trackers with AI. Upload images of your workout plans and track your progress with ease.
+
+## Features
+
+- **AI-Powered Extraction**: Upload an image or PDF of your workout plan and let Google Gemini Vision API extract the exercises, sets, reps, weights, and notes automatically
+- **PDF Support**: Automatically converts PDF workout plans to images for processing
+- **Mobile-First Design**: Optimized for mobile use with a clean, touch-friendly interface inspired by the Strong app
+- **Fully Editable**: Edit workout names, day names, and exercise names with inline editing
+- **Home Dashboard**: Clean home view displaying all workout days with stats
+- **Multi-Day Workout Splits**: Automatically detects and organizes workout plans split by days (e.g., "Day 1: Push", "Day 2: Pull", "Day 3: Legs")
+- **Workout Session Tracking**: Start workout sessions with confirmation and track total workout time
+- **Interactive Set Tracking**: Track completed sets with large, easy-to-tap checkmarks and inline weight/rep inputs
+- **Floating Rest Timer**: Compact floating timer that auto-starts after completing a set, doesn't block the screen
+- **Progress History**: View your workout history with beautiful visualizations and statistics
+- **Exercise Notes**: Automatically extracts exercise notes from uploaded plans (form cues, tempo, technique tips) and allows you to add/edit notes for any exercise
+- **Session Management**: Complete workout sessions with a beautiful bottom-sheet interface
+- **Local Storage**: All your data is stored locally in your browser - no server required
+- **Dark Mode**: Automatic dark mode support based on system preferences
+- **Touch-Optimized**: Large tap targets and smooth animations for the best mobile experience
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ installed on your machine
+- A Google Gemini API key (get one at https://makersuite.google.com/app/apikey)
+
+### Installation
+
+1. Clone this repository or navigate to the project directory:
+
+```bash
+cd pdf-to-workout
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Create a `.env.local` file in the root directory and add your Google Gemini API key:
+
+```env
+GOOGLE_GEMINI_API_KEY=your_api_key_here
+```
+
+4. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Uploading a Workout Plan
 
-## Learn More
+1. On the home page, drag and drop an image or PDF of your workout plan, or tap to select a file
+2. Supported formats: JPG, PNG, WebP, PDF
+3. For PDFs, the app will automatically convert the first page to an image
+4. The app will process the file using AI and extract the workout information
+5. If your workout is split by days (e.g., Push/Pull/Legs), the app will automatically organize exercises by day
+6. Your workout plan will be displayed with all exercises ready to track
 
-To learn more about Next.js, take a look at the following resources:
+### Starting a Workout
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. From the home screen, tap the workout day you want to do
+2. Confirm to start your workout session
+3. A workout clock starts tracking your total workout time
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Tracking Your Workout
 
-## Deploy on Vercel
+1. For each exercise and set:
+   - See target sets, reps, and weight displayed above the table
+   - Tap the weight/reps fields to enter your actual numbers
+   - Tap the checkmark when you complete the set
+   - Sets turn green when completed
+2. Rest timer automatically appears after completing a set:
+   - Compact timer floats in bottom-right corner
+   - Doesn't block the screen - you can scroll freely
+   - Uses the rest time specified in your workout plan
+   - Adjust timer up/down by 15 seconds with +/- buttons if needed
+   - Get visual and audio alerts when rest is complete
+3. Edit any text by tapping on it:
+   - Tap workout name to rename your plan
+   - Double-tap day names to edit them
+   - Tap exercise names to customize them
+4. View and edit notes for each exercise - notes are automatically extracted from your workout plan or you can add your own
+5. The workout clock shows your total workout duration
+6. When finished, tap "Finish Workout" to save your session
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Completing a Session
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Once you're done with your workout, click "Complete Workout"
+2. Add optional session notes (e.g., "Felt strong today", "Lower back slightly sore")
+3. The session will be saved to your history and your progress will be reset for the next workout
+
+### Viewing Progress
+
+1. Click the progress icon (📈) in the top right of the tracker
+2. View statistics including:
+   - Total number of workout sessions
+   - Average completion rate
+   - Exercise-specific performance
+   - Complete session history with dates and notes
+
+### Starting a New Workout Plan
+
+1. Click the upload icon (📤) in the top right
+2. Confirm that you want to replace your current workout plan
+3. Upload a new workout image
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **AI**: Google Gemini Vision API
+- **PDF Processing**: PDF.js (pdfjs-dist)
+- **Icons**: Lucide React
+- **Date Handling**: date-fns
+- **Storage**: Browser Local Storage
+
+## Project Structure
+
+```
+pdf-to-workout/
+├── app/
+│   ├── api/
+│   │   └── extract-workout/
+│   │       └── route.ts          # API endpoint for workout extraction
+│   ├── globals.css               # Global styles and animations
+│   ├── layout.tsx                # Root layout with metadata
+│   └── page.tsx                  # Main application page
+├── components/
+│   ├── ExerciseCard.tsx          # Individual exercise tracking card
+│   ├── ProgressView.tsx          # Progress and history view
+│   ├── UploadZone.tsx            # Drag-and-drop upload component
+│   └── WorkoutTracker.tsx        # Main workout tracking interface
+├── hooks/
+│   └── useWorkout.ts             # Custom hook for workout state management
+├── lib/
+│   ├── gemini.ts                 # Gemini API integration
+│   ├── pdfToImage.ts             # PDF to image conversion utility
+│   └── localStorage.ts           # Local storage utilities
+├── types/
+│   └── workout.ts                # TypeScript type definitions
+└── package.json
+```
+
+## Data Structure
+
+All workout data is stored locally in your browser using localStorage. The main data structure includes:
+
+- **Workout Plan**: Contains workout name, upload date, workout days, and session history
+- **Workout Days**: Organizes exercises by day/split (e.g., "Day 1: Push", "Day 2: Pull")
+- **Exercises**: Each exercise has name, sets, reps, optional weight/rest time, and completion tracking
+- **Set Records**: Individual set tracking with reps, weight, and completion status
+- **Workout Sessions**: Historical records of completed workouts with dates, completed day, and notes
+
+The app automatically detects whether your workout plan is:
+- **Single-day**: All exercises in one workout
+- **Multi-day split**: Exercises organized by days (Push/Pull/Legs, Upper/Lower, etc.)
+
+## Privacy & Security
+
+- All workout data is stored locally in your browser
+- No workout data is sent to any server except the Gemini API for initial extraction
+- Your API key is stored in environment variables and never exposed to the client
+- You can clear your workout data at any time by uploading a new plan
+
+## Browser Support
+
+- Chrome/Edge (latest)
+- Firefox (latest)
+- Safari (latest)
+
+## Troubleshooting
+
+### "Failed to extract workout from image"
+
+- Ensure your API key is correctly set in `.env.local`
+- Make sure the image/PDF is clear and readable
+- Try using a higher quality image or PDF
+- For PDFs, ensure the workout plan is on the first page
+- Check that the file contains a visible workout plan
+
+### Data not persisting
+
+- Check that your browser allows localStorage
+- Make sure you're not in private/incognito mode
+- Try clearing your browser cache and reloading
+
+### API Rate Limits
+
+- Google Gemini has rate limits on the free tier
+- If you hit rate limits, wait a few minutes before trying again
+- Consider upgrading to a paid plan for higher limits
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+MIT License - feel free to use this project for personal or commercial purposes.
+
+## Acknowledgments
+
+- Built with Next.js and Tailwind CSS
+- AI-powered by Google Gemini
+- Icons by Lucide React

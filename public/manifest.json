@@ -1,0 +1,21 @@
+{
+  "name": "PDF to Workout Tracker",
+  "short_name": "Workout Tracker",
+  "description": "Convert your PDF workout plans into an interactive tracking app",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["fitness", "health"],
+  "screenshots": []
+}
+
