@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useWorkout } from '@/hooks/useWorkout';
-import UploadZone from '@/components/UploadZone';
-import WorkoutTracker from '@/components/WorkoutTracker';
-import ProgressView from '@/components/ProgressView';
-import HomeView from '@/components/HomeView';
-import InstallPrompt from '@/components/InstallPrompt';
-import { pdfToImage } from '@/lib/pdfToImage';
-import { Dumbbell } from 'lucide-react';
+import { useState } from "react";
+import { useWorkout } from "@/hooks/useWorkout";
+import UploadZone from "@/components/UploadZone";
+import WorkoutTracker from "@/components/WorkoutTracker";
+import ProgressView from "@/components/ProgressView";
+import HomeView from "@/components/HomeView";
+import InstallPrompt from "@/components/InstallPrompt";
+import { pdfToImage } from "@/lib/pdfToImage";
+import { Dumbbell } from "lucide-react";
 
 export default function Home() {
   const {
@@ -24,68 +24,75 @@ export default function Home() {
     handleCompleteSession,
     handleResetSession,
     handleClearWorkout,
-    handleSwitchPlan
+    handleSwitchPlan,
+    handleDeletePlan,
   } = useWorkout();
 
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState<string>('');
-  const [view, setView] = useState<'home' | 'tracker' | 'progress'>('home');
-  const [selectedDayId, setSelectedDayId] = useState<string>('');
-  const [workoutStartTime, setWorkoutStartTime] = useState<number | undefined>(undefined);
+  const [uploadError, setUploadError] = useState<string>("");
+  const [view, setView] = useState<"home" | "tracker" | "progress">("home");
+  const [selectedDayId, setSelectedDayId] = useState<string>("");
+  const [workoutStartTime, setWorkoutStartTime] = useState<number | undefined>(
+    undefined
+  );
   const [showStartDialog, setShowStartDialog] = useState(false);
-  const [pendingDayId, setPendingDayId] = useState<string>('');
+  const [pendingDayId, setPendingDayId] = useState<string>("");
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
-    setUploadError('');
+    setUploadError("");
 
     try {
       let fileToUpload = file;
 
       // Convert PDF to image if necessary
-      if (file.type === 'application/pdf') {
+      if (file.type === "application/pdf") {
         try {
           fileToUpload = await pdfToImage(file);
         } catch (error) {
-          console.error('PDF conversion error:', error);
-          throw new Error('Failed to convert PDF. Please try uploading an image instead.');
+          console.error("PDF conversion error:", error);
+          throw new Error(
+            "Failed to convert PDF. Please try uploading an image instead."
+          );
         }
       }
 
       const formData = new FormData();
-      formData.append('image', fileToUpload);
+      formData.append("image", fileToUpload);
 
-      const response = await fetch('/api/extract-workout', {
-        method: 'POST',
-        body: formData
+      const response = await fetch("/api/extract-workout", {
+        method: "POST",
+        body: formData,
       });
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || 'Failed to extract workout');
+        throw new Error(error.error || "Failed to extract workout");
       }
 
       const workoutData = await response.json();
       setNewWorkoutPlan(workoutData);
     } catch (error) {
-      console.error('Upload error:', error);
-      setUploadError(error instanceof Error ? error.message : 'Failed to process file');
+      console.error("Upload error:", error);
+      setUploadError(
+        error instanceof Error ? error.message : "Failed to process file"
+      );
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleStartDay = (dayId: string) => {
-    const day = workoutPlan?.days.find(d => d.id === dayId);
-    
+    const day = workoutPlan?.days.find((d) => d.id === dayId);
+
     // Handle rest days differently
     if (day?.isRestDay) {
-      if (confirm('Mark this rest day as complete?')) {
-        handleCompleteSession(dayId, 'Rest day completed', 0);
+      if (confirm("Mark this rest day as complete?")) {
+        handleCompleteSession(dayId, "Rest day completed", 0);
       }
       return;
     }
-    
+
     setPendingDayId(dayId);
     setShowStartDialog(true);
   };
@@ -93,42 +100,56 @@ export default function Home() {
   const handleConfirmStart = () => {
     setSelectedDayId(pendingDayId);
     setWorkoutStartTime(Date.now());
-    setView('tracker');
+    setView("tracker");
     setShowStartDialog(false);
   };
 
   const handleBackToHome = () => {
     if (workoutStartTime) {
-      if (confirm('End your workout session? Your progress will be lost unless you finish the workout.')) {
-        setView('home');
+      if (
+        confirm(
+          "End your workout session? Your progress will be lost unless you finish the workout."
+        )
+      ) {
+        setView("home");
         setWorkoutStartTime(undefined);
         handleResetSession(selectedDayId);
       }
     } else {
-      setView('home');
+      setView("home");
     }
   };
 
   const handleNewWorkout = () => {
-    if (confirm('Are you sure you want to upload a new workout? This will replace your current workout plan.')) {
+    if (
+      confirm(
+        "Are you sure you want to upload a new workout? This will replace your current workout plan."
+      )
+    ) {
       handleClearWorkout();
-      setView('home');
+      setView("home");
       setWorkoutStartTime(undefined);
     }
   };
 
   const handleResetSessionConfirm = (dayId?: string) => {
-    if (confirm('Are you sure you want to reset your current session? All progress will be lost.')) {
+    if (
+      confirm(
+        "Are you sure you want to reset your current session? All progress will be lost."
+      )
+    ) {
       handleResetSession(dayId);
     }
   };
 
   const handleCompleteWorkout = (dayId: string, notes?: string) => {
     // Calculate workout duration
-    const duration = workoutStartTime ? Math.floor((Date.now() - workoutStartTime) / 1000) : undefined;
+    const duration = workoutStartTime
+      ? Math.floor((Date.now() - workoutStartTime) / 1000)
+      : undefined;
     handleCompleteSession(dayId, notes, duration);
     setWorkoutStartTime(undefined);
-    setView('home');
+    setView("home");
   };
 
   if (workoutLoading) {
@@ -166,8 +187,9 @@ export default function Home() {
                   Transform Your Workout Plans
                 </h2>
                 <p className="text-lg text-gray-600 dark:text-gray-400">
-                  Upload an image of your workout plan and we'll convert it into an interactive tracker
-                  to help you monitor your progress, track sets and reps, and stay motivated.
+                  Upload an image of your workout plan and we'll convert it into
+                  an interactive tracker to help you monitor your progress,
+                  track sets and reps, and stay motivated.
                 </p>
               </div>
               <UploadZone
@@ -178,22 +200,23 @@ export default function Home() {
             </div>
           </main>
         </>
-      ) : view === 'home' ? (
+      ) : view === "home" ? (
         <HomeView
           workoutPlan={workoutPlan}
           onStartDay={handleStartDay}
-          onViewProgress={() => setView('progress')}
+          onViewProgress={() => setView("progress")}
           onNewWorkout={handleNewWorkout}
         />
-      ) : view === 'progress' ? (
+      ) : view === "progress" ? (
         <ProgressView
           workoutPlan={workoutPlan}
           allWorkoutPlans={allWorkoutPlans}
-          onBack={() => setView('home')}
+          onBack={() => setView("home")}
           onSwitchPlan={(planId) => {
             handleSwitchPlan(planId);
-            setView('home');
+            setView("home");
           }}
+          onDeletePlan={handleDeletePlan}
         />
       ) : (
         <WorkoutTracker
@@ -208,7 +231,7 @@ export default function Home() {
           onCompleteSession={handleCompleteWorkout}
           onResetSession={handleResetSessionConfirm}
           onBackToHome={handleBackToHome}
-          onViewProgress={() => setView('progress')}
+          onViewProgress={() => setView("progress")}
         />
       )}
 
@@ -220,8 +243,9 @@ export default function Home() {
               Start Workout?
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              Begin your {workoutPlan.days.find(d => d.id === pendingDayId)?.name} workout session?
-              We'll start tracking your workout time.
+              Begin your{" "}
+              {workoutPlan.days.find((d) => d.id === pendingDayId)?.name}{" "}
+              workout session?
             </p>
             <div className="flex gap-3">
               <button

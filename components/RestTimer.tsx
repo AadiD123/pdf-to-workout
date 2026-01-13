@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Timer, Play, Pause, RotateCcw, Plus, Minus } from "lucide-react";
+import { Timer, Play, Pause, RotateCcw, Plus, Minus, X } from "lucide-react";
 
 interface RestTimerProps {
   defaultRestTime?: string; // e.g., "90 sec", "2 min", "60s"
@@ -10,6 +10,7 @@ interface RestTimerProps {
   onAutoStartComplete?: () => void; // Callback when auto-start is handled
   onClose?: () => void; // Callback when timer is closed
   inline?: boolean; // Whether to show inline (in header) vs floating
+  minimal?: boolean; // Minimal design for top-left placement
 }
 
 export default function RestTimer({
@@ -19,6 +20,7 @@ export default function RestTimer({
   onAutoStartComplete,
   onClose,
   inline = false,
+  minimal = false,
 }: RestTimerProps) {
   const [isOpen, setIsOpen] = useState(inline); // Always open if inline
   const [isRunning, setIsRunning] = useState(false);
@@ -185,6 +187,42 @@ export default function RestTimer({
   const progressPercentage =
     targetTime > 0 ? ((targetTime - timeLeft) / targetTime) * 100 : 0;
 
+  // Minimal timer (compact, top-left)
+  if (minimal && inline && isOpen) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className={`text-lg font-bold ${
+          timeLeft === 0
+            ? "text-green-500"
+            : timeLeft <= 10
+            ? "text-red-500"
+            : "text-gray-900 dark:text-gray-100"
+        }`}>
+          {formatTime(timeLeft)}
+        </span>
+        {!isRunning && (
+          <button
+            onClick={handleStartPause}
+            className="p-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Play className="w-3 h-3" />
+          </button>
+        )}
+        {isRunning && (
+          <button
+            onClick={handleStartPause}
+            className="p-1 rounded bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+          >
+            <Pause className="w-3 h-3" />
+          </button>
+        )}
+        <button onClick={handleClose} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+          <X className="w-3 h-3" />
+        </button>
+      </div>
+    );
+  }
+
   // Inline timer (shown in header)
   if (inline && isOpen) {
     return (
@@ -272,7 +310,7 @@ export default function RestTimer({
         {timeLeft === 0 && (
           <div className="mt-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
             <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
-              Rest complete! 💪
+              Rest complete!
             </p>
           </div>
         )}
@@ -379,9 +417,9 @@ export default function RestTimer({
             {/* Completion Message */}
             {timeLeft === 0 && (
               <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
-                <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
-                  Rest complete! 💪
-                </p>
+              <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
+                Rest complete!
+              </p>
               </div>
             )}
           </div>

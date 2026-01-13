@@ -1,7 +1,7 @@
 'use client';
 
 import { WorkoutPlan } from '@/types/workout';
-import { ArrowLeft, Calendar, Dumbbell, Clock, ChevronDown, ChevronUp, Play, Timer } from 'lucide-react';
+import { ArrowLeft, Calendar, Dumbbell, Clock, ChevronDown, ChevronUp, Play, Timer, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { useState } from 'react';
 import { formatSecondsToDisplay } from '@/lib/timeUtils';
@@ -11,9 +11,10 @@ interface ProgressViewProps {
   allWorkoutPlans: WorkoutPlan[]; // All saved workout plans
   onBack: () => void;
   onSwitchPlan: (planId: string) => void;
+  onDeletePlan: (planId: string) => void;
 }
 
-export default function ProgressView({ workoutPlan, allWorkoutPlans, onBack, onSwitchPlan }: ProgressViewProps) {
+export default function ProgressView({ workoutPlan, allWorkoutPlans, onBack, onSwitchPlan, onDeletePlan }: ProgressViewProps) {
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
@@ -106,20 +107,32 @@ export default function ProgressView({ workoutPlan, allWorkoutPlans, onBack, onS
                         {plan.sessions.length} workout{plan.sessions.length !== 1 ? 's' : ''} • {plan.days.length} day{plan.days.length !== 1 ? 's' : ''}
                       </p>
                     </div>
-                    {plan.id !== workoutPlan.id && (
+                    <div className="flex items-center gap-2 ml-3">
+                      {plan.id !== workoutPlan.id && (
+                        <button
+                          onClick={() => onSwitchPlan(plan.id)}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1"
+                        >
+                          <Play className="w-3 h-3" />
+                          Follow
+                        </button>
+                      )}
+                      {plan.id === workoutPlan.id && (
+                        <div className="px-3 py-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold rounded-lg">
+                          Active
+                        </div>
+                      )}
                       <button
-                        onClick={() => onSwitchPlan(plan.id)}
-                        className="ml-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1"
+                        onClick={() => {
+                          if (confirm(`Delete "${plan.name}"? This will permanently remove all workout history.`)) {
+                            onDeletePlan(plan.id);
+                          }
+                        }}
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 transition-colors"
                       >
-                        <Play className="w-3 h-3" />
-                        Follow
+                        <Trash2 className="w-4 h-4" />
                       </button>
-                    )}
-                    {plan.id === workoutPlan.id && (
-                      <div className="ml-3 px-3 py-1.5 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 text-xs font-semibold rounded-lg">
-                        Active
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))}

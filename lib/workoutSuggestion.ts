@@ -60,25 +60,25 @@ export function getSuggestedDayMessage(
     : 0;
 
   if (day.isRestDay) {
-    return "Time to recover and let your muscles grow! 💪";
+    return "Time to recover and let your muscles grow!";
   }
 
   if (sessions.length === 0) {
-    return "Let's start your fitness journey! 🔥";
+    return "Let's start your fitness journey!";
   }
 
   if (daysSinceLastWorkout === 0) {
-    return "Back for more? Let's crush it! 💪";
+    return "Back for more? Let's crush it!";
   }
 
   if (daysSinceLastWorkout === 1) {
-    return "Keep the momentum going! 🚀";
+    return "Keep the momentum going!";
   }
 
   if (daysSinceLastWorkout > 7) {
-    return "Welcome back! Let's get back on track! 💪";
+    return "Welcome back! Let's get back on track!";
   }
 
-  return "Ready for your next workout? 🔥";
+  return "Ready for your next workout?";
 }
 

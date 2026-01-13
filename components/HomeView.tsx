@@ -8,12 +8,14 @@ import {
   ChevronRight,
   Sparkles,
   Coffee,
+  Plus,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import {
   getSuggestedDay,
   getSuggestedDayMessage,
 } from "@/lib/workoutSuggestion";
+import { calculateStreak } from "@/lib/streakCalculation";
 
 interface HomeViewProps {
   workoutPlan: WorkoutPlan;
@@ -44,6 +46,8 @@ export default function HomeView({
     ? differenceInDays(new Date(), new Date(lastWorkout.date))
     : null;
 
+  const currentStreak = calculateStreak(workoutPlan.sessions);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black pb-8">
       {/* Header */}
@@ -62,20 +66,20 @@ export default function HomeView({
 
         {/* Stats */}
         <div className="flex gap-3">
-          <div className="flex-1 bg-blue-50 dark:bg-blue-950/20 rounded-lg p-3">
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-              Workouts
+          <div className="flex-1 bg-orange-50 dark:bg-orange-950/20 rounded-lg p-3">
+            <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">
+              Current Streak
             </p>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-              {totalSessions}
+            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
+              {currentStreak}
             </p>
           </div>
           <div className="flex-1 bg-purple-50 dark:bg-purple-950/20 rounded-lg p-3">
             <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">
-              Days
+              Total Workouts
             </p>
             <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-              {workoutPlan.days.length}
+              {totalSessions}
             </p>
           </div>
         </div>
@@ -150,9 +154,18 @@ export default function HomeView({
 
       {/* All Workout Days */}
       <div className="px-4 pb-4">
-        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-3">
-          All Days
-        </h2>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+            All Days ({workoutPlan.days.length})
+          </h2>
+          <button
+            onClick={onNewWorkout}
+            className="p-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+            title="Upload new workout"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
 
         <div className="space-y-3">
           {workoutPlan.days.map((day) => {
@@ -230,13 +243,6 @@ export default function HomeView({
         >
           <TrendingUp className="w-5 h-5" />
           View Progress
-        </button>
-
-        <button
-          onClick={onNewWorkout}
-          className="w-full py-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 font-medium transition-colors"
-        >
-          Upload New Workout Plan
         </button>
       </div>
     </div>

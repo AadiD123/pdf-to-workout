@@ -40,13 +40,10 @@ export default function WorkoutTracker({
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [selectedDayId] = useState(propSelectedDayId); // Fixed to the day selected from home
-  const [isEditingWorkoutName, setIsEditingWorkoutName] = useState(false);
-  const [editedWorkoutName, setEditedWorkoutName] = useState(workoutPlan.name);
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [activeRestTimer, setActiveRestTimer] = useState<string | null>(null); // Track which exercise has active timer
   const [restTimerAutoStart, setRestTimerAutoStart] = useState(false);
   const [restTimerDuration, setRestTimerDuration] = useState<string | undefined>(undefined);
-  const workoutNameInputRef = useRef<HTMLInputElement>(null);
 
   const selectedDay = workoutPlan.days.find(d => d.id === selectedDayId) || workoutPlan.days[0];
   
@@ -73,24 +70,6 @@ export default function WorkoutTracker({
   const totalExercises = selectedDay?.exercises.length || 0;
   const overallProgress = totalExercises > 0 ? (completedExercisesCount / totalExercises) * 100 : 0;
 
-  useEffect(() => {
-    if (isEditingWorkoutName && workoutNameInputRef.current) {
-      workoutNameInputRef.current.focus();
-      workoutNameInputRef.current.select();
-    }
-  }, [isEditingWorkoutName]);
-
-  const handleSaveWorkoutName = () => {
-    if (editedWorkoutName.trim() && editedWorkoutName !== workoutPlan.name) {
-      onUpdateWorkoutName(editedWorkoutName.trim());
-    }
-    setIsEditingWorkoutName(false);
-  };
-
-  const handleCancelWorkoutName = () => {
-    setEditedWorkoutName(workoutPlan.name);
-    setIsEditingWorkoutName(false);
-  };
 
   const handleDiscardWorkout = () => {
     if (confirm('Discard this workout? All your progress will be lost.')) {
@@ -112,50 +91,44 @@ export default function WorkoutTracker({
     <div className="min-h-screen bg-gray-50 dark:bg-black pb-24">
       {/* Fixed Header - Strong App Style */}
       <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center justify-between p-4">
-          {/* Workout Clock */}
+        {/* Top Row: Timers, Title, Menu */}
+        <div className="flex items-start justify-between gap-4 p-4">
+          {/* Left: Timers */}
           {workoutStartTime && (
-            <div className="absolute top-4 left-4 bg-blue-100 dark:bg-blue-900/20 px-3 py-1.5 rounded-full">
-              <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
-                {formatDuration(workoutDuration)}
-              </span>
+            <div className="flex flex-col gap-1.5 min-w-[80px]">
+              <div className="bg-blue-100 dark:bg-blue-900/20 px-3 py-1.5 rounded-full">
+                <span className="text-sm font-semibold text-blue-700 dark:text-blue-300">
+                  {formatDuration(workoutDuration)}
+                </span>
+              </div>
+              {/* Minimal Rest Timer */}
+              {activeRestTimer && (
+                <div className="bg-orange-50 dark:bg-orange-900/20 px-3 py-1.5 rounded-full border border-orange-200 dark:border-orange-800">
+                  <RestTimer 
+                    defaultRestTime={restTimerDuration}
+                    autoStart={restTimerAutoStart}
+                    onAutoStartComplete={() => setRestTimerAutoStart(false)}
+                    onClose={() => setActiveRestTimer(null)}
+                    inline={true}
+                    minimal={true}
+                  />
+                </div>
+              )}
             </div>
           )}
           
-          <div className="flex-1 ml-28">
-            {isEditingWorkoutName ? (
-              <div className="flex items-center gap-2">
-                <input
-                  ref={workoutNameInputRef}
-                  type="text"
-                  value={editedWorkoutName}
-                  onChange={(e) => setEditedWorkoutName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveWorkoutName();
-                    if (e.key === 'Escape') handleCancelWorkoutName();
-                  }}
-                  className="flex-1 text-xl font-bold bg-transparent border-b-2 border-blue-500 focus:outline-none text-gray-900 dark:text-gray-100"
-                />
-                <button onClick={handleSaveWorkoutName} className="p-1.5 rounded-lg bg-blue-600 text-white">
-                  <Check className="w-4 h-4" />
-                </button>
-                <button onClick={handleCancelWorkoutName} className="p-1.5 rounded-lg bg-gray-200 dark:bg-gray-800">
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setIsEditingWorkoutName(true)}
-                className="text-xl font-bold text-gray-900 dark:text-gray-100 text-left hover:text-blue-600 dark:hover:text-blue-400"
-              >
-                {workoutPlan.name}
-              </button>
-            )}
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          {/* Center: Title */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">
+              {workoutPlan.name}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {format(new Date(workoutPlan.uploadedAt), 'MMM d, yyyy')}
             </p>
           </div>
-          <div className="relative">
+          
+          {/* Right: Menu */}
+          <div className="relative flex-shrink-0">
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -197,24 +170,11 @@ export default function WorkoutTracker({
         </div>
 
         {/* Workout Day Title */}
-        <div className="px-4 pb-2">
+        <div className="px-4 pb-3 pt-1">
           <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
             {selectedDay?.name}
           </h2>
         </div>
-
-        {/* Centralized Rest Timer */}
-        {activeRestTimer && (
-          <div className="px-4 pb-2">
-            <RestTimer 
-              defaultRestTime={restTimerDuration}
-              autoStart={restTimerAutoStart}
-              onAutoStartComplete={() => setRestTimerAutoStart(false)}
-              onClose={() => setActiveRestTimer(null)}
-              inline={true}
-            />
-          </div>
-        )}
 
         {/* Progress Bar */}
         <div className="h-1 bg-gray-200 dark:bg-gray-800">

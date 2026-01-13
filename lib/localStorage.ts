@@ -234,3 +234,25 @@ export function getActivePlanId(): string | null {
   return null;
 }
 
+export function deleteWorkoutPlan(planId: string): void {
+  if (typeof window !== 'undefined') {
+    const allPlans = loadAllWorkoutPlans();
+    const filteredPlans = allPlans.filter(p => p.id !== planId);
+    
+    // If deleting the active plan, switch to another one or clear
+    const activePlanId = getActivePlanId();
+    if (activePlanId === planId) {
+      if (filteredPlans.length > 0) {
+        // Switch to the first remaining plan
+        switchToWorkoutPlan(filteredPlans[0].id);
+      } else {
+        // No plans left, clear everything
+        clearWorkoutPlan();
+      }
+    }
+    
+    // Update the all plans list
+    localStorage.setItem(ALL_WORKOUT_PLANS_KEY, JSON.stringify(filteredPlans));
+  }
+}
+

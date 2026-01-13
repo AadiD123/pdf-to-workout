@@ -51,6 +51,15 @@ If the workout is organized by DAYS/SPLITS:
           "notes": "Focus on slow eccentric, pause at bottom"
         },
         {
+          "name": "Dumbbell Flyes",
+          "type": "reps",
+          "sets": 3,
+          "reps": ["12", "10", "8"],
+          "weight": "30 lbs",
+          "restTime": "60 sec",
+          "notes": "Drop sets - decreasing reps each set"
+        },
+        {
           "name": "Plank",
           "type": "time",
           "sets": 3,
@@ -91,6 +100,8 @@ Important:
   * Use "type": "reps" for exercises measured in repetitions (most strength training)
   * Look for time indicators: "sec", "seconds", "min", "minutes", ":30", "0:45", etc.
 - For time-based exercises, put the duration in the "reps" field (e.g., "60 sec", "1 min", "30s")
+- IMPORTANT: If sets have different target reps, use an array: "reps": ["12", "10", "8"] (descending), ["8", "10", "12"] (ascending), or ["10", "12", "15+"] (progressive)
+- If all sets have the same target, use a single value: "reps": "10" or "reps": "8-12"
 - If an exercise doesn't have weight, rest time, or notes specified, omit those fields
 - Extract ALL notes, tips, form cues, or comments associated with each exercise
 - Notes can include: tempo (e.g., "3-1-1-0"), technique reminders (e.g., "keep back straight"), equipment variations (e.g., "can use dumbbells"), or any other relevant information

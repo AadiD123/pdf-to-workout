@@ -14,7 +14,8 @@ import {
   resetCurrentSession,
   completeCurrentSession,
   loadAllWorkoutPlans,
-  switchToWorkoutPlan
+  switchToWorkoutPlan,
+  deleteWorkoutPlan
 } from '@/lib/localStorage';
 
 export function useWorkout() {
@@ -86,7 +87,17 @@ export function useWorkout() {
   const handleSwitchPlan = (planId: string) => {
     switchToWorkoutPlan(planId);
     const plan = loadWorkoutPlan();
+    const allPlans = loadAllWorkoutPlans();
     setWorkoutPlan(plan);
+    setAllWorkoutPlans(allPlans);
+  };
+
+  const handleDeletePlan = (planId: string) => {
+    deleteWorkoutPlan(planId);
+    const plan = loadWorkoutPlan();
+    const allPlans = loadAllWorkoutPlans();
+    setWorkoutPlan(plan);
+    setAllWorkoutPlans(allPlans);
   };
 
   return {
@@ -102,7 +113,8 @@ export function useWorkout() {
     handleCompleteSession,
     handleResetSession,
     handleClearWorkout,
-    handleSwitchPlan
+    handleSwitchPlan,
+    handleDeletePlan
   };
 }
 
