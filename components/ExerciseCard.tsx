@@ -237,7 +237,7 @@ export default function ExerciseCard({
                 if (e.key === 'Enter') handleSaveName();
                 if (e.key === 'Escape') handleCancelName();
               }}
-              className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-[#00e8ff] focus:outline-none text-gray-100 pb-1"
+              className="flex-1 text-lg font-semibold bg-transparent border-b-2 border-[#c6ff5e] focus:outline-none text-gray-100 pb-1"
             />
             <button
               onClick={handleSaveName}
@@ -265,7 +265,7 @@ export default function ExerciseCard({
                 <button
                   onClick={() => setShowPlates(!showPlates)}
                   className={`min-w-[44px] min-h-[44px] rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors ${
-                    showPlates ? 'text-[#00e8ff]' : 'text-gray-400'
+                    showPlates ? 'text-[#c6ff5e]' : 'text-gray-400'
                   }`}
                   title="Plate calculator"
                 >
@@ -304,7 +304,7 @@ export default function ExerciseCard({
             Target
           </p>
           <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-300">
-            {isTimeBased && <Timer className="w-3.5 h-3.5 text-[#00e8ff]" />}
+            {isTimeBased && <Timer className="w-3.5 h-3.5 text-[#c6ff5e]" />}
             <span className="font-semibold">{exercise.sets} × {exercise.reps}</span>
             {exercise.weight && <span className="text-gray-400">@ {exercise.weight}</span>}
             {exercise.restTime && <span className="text-gray-500">• {exercise.restTime}</span>}
@@ -410,7 +410,7 @@ export default function ExerciseCard({
                             }
                           }
                         }}
-                        className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff] focus:border-transparent placeholder:text-gray-500"
+                        className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
                       />
                     </td>
                   )}
@@ -447,7 +447,7 @@ export default function ExerciseCard({
                             });
                           }
                         }}
-                        className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff] focus:border-transparent placeholder:text-gray-500"
+                        className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
                       />
                     ) : (
                       // Rep-based input
@@ -478,7 +478,7 @@ export default function ExerciseCard({
                             }
                           }
                         }}
-                        className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff] focus:border-transparent placeholder:text-gray-500"
+                        className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
                       />
                     )}
                   </td>
@@ -594,7 +594,7 @@ export default function ExerciseCard({
         {onAddSet && (
           <button
             onClick={onAddSet}
-            className="flex items-center gap-2 px-4 py-2 min-h-[44px] text-[11px] font-semibold uppercase tracking-[0.2em] text-[#00e8ff] bg-[#0f1820] border border-[#1f3440] rounded-lg transition-colors hover:bg-[#13212a]"
+            className="flex items-center gap-2 px-4 py-2 min-h-[44px] text-[11px] font-semibold uppercase tracking-[0.2em] text-[#c6ff5e] bg-[#0f1820] border border-[#1f3440] rounded-lg transition-colors hover:bg-[#13212a]"
           >
             <Plus className="w-4 h-4" />
             Add Set
@@ -627,7 +627,7 @@ export default function ExerciseCard({
             
             {isLoadingAlternatives ? (
               <div className="flex flex-col items-center justify-center py-8">
-                <RefreshCw className="w-8 h-8 text-[#00e8ff] animate-spin mb-3" />
+                <RefreshCw className="w-8 h-8 text-[#c6ff5e] animate-spin mb-3" />
                 <p className="text-gray-400">Finding alternatives...</p>
               </div>
             ) : alternatives.length > 0 ? (
@@ -636,7 +636,7 @@ export default function ExerciseCard({
                   <button
                     key={index}
                     onClick={() => handleSelectAlternative(alt)}
-                    className="w-full text-left p-4 rounded-xl border-2 border-[#242432] hover:border-[#00e8ff] transition-colors"
+                    className="w-full text-left p-4 rounded-xl border-2 border-[#242432] hover:border-[#c6ff5e] transition-colors"
                   >
                     <h4 className="font-semibold text-gray-100 mb-1">
                       {alt.name}

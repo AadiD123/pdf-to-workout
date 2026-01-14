@@ -10,6 +10,7 @@ import {
   Plus,
   Settings,
   MoreVertical,
+  GripVertical,
 } from "lucide-react";
 import { useState } from "react";
 import PlateSettings from "./PlateSettings";
@@ -26,6 +27,7 @@ interface HomeViewProps {
   onViewProgress: () => void;
   onNewWorkout: () => void;
   onAddDay: () => void;
+  onReorderDays: (dayOrder: string[]) => void;
 }
 
 export default function HomeView({
@@ -34,9 +36,12 @@ export default function HomeView({
   onViewProgress,
   onNewWorkout,
   onAddDay,
+  onReorderDays,
 }: HomeViewProps) {
   const [showPlateSettings, setShowPlateSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [draggedDayId, setDraggedDayId] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const lastWorkout =
     workoutPlan.sessions.length > 0
       ? workoutPlan.sessions[workoutPlan.sessions.length - 1]
@@ -71,7 +76,7 @@ export default function HomeView({
           <div className="relative">
             <button
               onClick={() => setShowMenu((prev) => !prev)}
-              className="min-w-[44px] min-h-[44px] rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors"
+              className="min-w-[44px] min-h-[44px] rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors flex items-center justify-center"
               title="Menu"
             >
               <MoreVertical className="w-5 h-5 text-gray-300" />
@@ -206,13 +211,50 @@ export default function HomeView({
             ).length;
 
             return (
-              <button
+              <div
                 key={day.id}
-                onClick={() => onStartDay(day.id)}
-                className={`w-full rounded-[12px] p-4 border transition-all active:scale-[0.98] ${
+                role="button"
+                tabIndex={0}
+                onClick={() => {
+                  if (isDragging) return;
+                  onStartDay(day.id);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onStartDay(day.id);
+                  }
+                }}
+                draggable
+                onDragStart={(event) => {
+                  setDraggedDayId(day.id);
+                  setIsDragging(true);
+                  event.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(event) => {
+                  if (!draggedDayId || draggedDayId === day.id) return;
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (!draggedDayId || draggedDayId === day.id) return;
+                  const ids = workoutPlan.days.map((d) => d.id);
+                  const fromIndex = ids.indexOf(draggedDayId);
+                  const toIndex = ids.indexOf(day.id);
+                  if (fromIndex === -1 || toIndex === -1) return;
+                  ids.splice(fromIndex, 1);
+                  ids.splice(toIndex, 0, draggedDayId);
+                  onReorderDays(ids);
+                }}
+                onDragEnd={() => {
+                  setDraggedDayId(null);
+                  setIsDragging(false);
+                }}
+                className={`w-full rounded-[12px] p-4 border transition-all active:scale-[0.98] cursor-pointer ${
                   day.isRestDay
                     ? "bg-[#151c17] border-[#273629] hover:border-[#3a5a40]"
-                    : "bg-[#15151c] border-[#242432] hover:border-[#00e8ff]"
+                    : "bg-[#15151c] border-[#242432] hover:border-[#c6ff5e]"
                 }`}
               >
                 <div className="flex items-center gap-4">
@@ -256,9 +298,14 @@ export default function HomeView({
                     )}
                   </div>
 
-                  <ChevronRight className="w-6 h-6 text-gray-500" />
+                  <div className="flex items-center gap-3">
+                    <div className="min-w-[28px] min-h-[28px] rounded-md border border-[#242432] text-gray-400 flex items-center justify-center">
+                      <GripVertical className="w-4 h-4" />
+                    </div>
+                    <ChevronRight className="w-6 h-6 text-gray-500" />
+                  </div>
                 </div>
-              </button>
+              </div>
             );
           })}
         </div>

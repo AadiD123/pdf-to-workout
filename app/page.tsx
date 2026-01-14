@@ -28,6 +28,7 @@ export default function Home() {
     handleSwitchPlan,
     handleDeletePlan,
     handleAddDay,
+    handleReorderDays,
     handleAddExercise,
     handleDeleteExercise,
     handleAddSet,
@@ -308,13 +309,15 @@ export default function Home() {
               <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
                 <div className="text-center mb-8 max-w-2xl">
                   <h2 className="text-3xl font-extrabold uppercase tracking-tight text-gray-100 mb-4">
-                    Transform Your Workout Plans
+                    Stop Typing. Start Lifting
                   </h2>
                   <p className="text-lg text-gray-400">
-                    Upload an image, paste text, or add a PDF of your workout
-                    plan and we'll convert it into an interactive tracker to
-                    help you monitor your progress, track sets and reps, and
-                    stay motivated.
+                    Turn your workout PDFs or Reddit routines into a smart,
+                    interactive tracker in 5 seconds. No manual setup, just
+                    results.
+                  </p>
+                  <p className="mt-2 text-sm text-gray-500">
+                    No account or credit card required to start
                   </p>
                 </div>
                 <UploadZone
@@ -335,6 +338,7 @@ export default function Home() {
               onViewProgress={() => setView("progress")}
               onNewWorkout={handleNewWorkout}
               onAddDay={handleAddWorkoutDay}
+              onReorderDays={handleReorderDays}
             />
           </motion.div>
         ) : view === "progress" ? (

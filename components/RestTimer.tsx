@@ -229,7 +229,7 @@ export default function RestTimer({
       <div className="bg-[#15151c] rounded-xl border border-[#242432] p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Timer className="w-4 h-4 text-[#00e8ff]" />
+            <Timer className="w-4 h-4 text-[#c6ff5e]" />
             <span className="text-sm font-semibold text-gray-300">
               Rest
             </span>
@@ -257,7 +257,7 @@ export default function RestTimer({
         <div className="h-2 bg-[#1f232b] rounded-full overflow-hidden mb-2">
           <div
             className={`h-full transition-all duration-1000 ${
-              timeLeft === 0 ? "bg-[#c6ff5e]" : "bg-[#00e8ff]"
+              timeLeft === 0 ? "bg-[#c6ff5e]" : "bg-[#c6ff5e]"
             }`}
             style={{ width: `${progressPercentage}%` }}
           />
@@ -330,7 +330,7 @@ export default function RestTimer({
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Timer className="w-5 h-5 text-[#00e8ff]" />
+                <Timer className="w-5 h-5 text-[#c6ff5e]" />
                 <h3 className="font-bold text-gray-100">
                   Rest Timer
                 </h3>
@@ -360,7 +360,7 @@ export default function RestTimer({
               <div className="h-2 bg-[#1f232b] rounded-full overflow-hidden mt-3">
                 <div
                   className={`h-full transition-all duration-1000 ${
-                    timeLeft === 0 ? "bg-[#c6ff5e]" : "bg-[#00e8ff]"
+                    timeLeft === 0 ? "bg-[#c6ff5e]" : "bg-[#c6ff5e]"
                   }`}
                   style={{ width: `${progressPercentage}%` }}
                 />

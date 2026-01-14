@@ -2,6 +2,7 @@
 
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import { Upload, Image as ImageIcon, FileText, Type, Terminal, ScanLine, Plus } from 'lucide-react';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface UploadZoneProps {
   onUpload: (file: File) => void;
@@ -149,6 +150,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
   };
 
   const handleAddManualDay = () => {
+    triggerHaptic(10);
     setManualDays((prev) => [...prev, createEmptyDay()]);
   };
 
@@ -157,6 +159,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
   };
 
   const handleAddManualExercise = (dayId: string) => {
+    triggerHaptic(10);
     setManualDays((prev) =>
       prev.map((day) =>
         day.id === dayId
@@ -216,7 +219,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
           disabled={isLoading}
           className={`w-full min-h-[44px] py-2.5 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 tracking-wide text-xs sm:text-sm leading-tight ${
             inputMode === 'text'
-              ? 'bg-[#1f232b] text-[#00e8ff] border border-[#2f3340] shadow-[0_0_18px_rgba(0,232,255,0.15)]'
+              ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]'
               : 'text-gray-300 hover:bg-[#1a1d24]'
           } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
@@ -251,7 +254,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
             transition-all duration-200 ease-in-out bg-[#0d0f14]
             ${isDragging 
               ? 'border-[#c6ff5e] bg-[#141820] scale-[1.02]' 
-              : 'border-[#2a2f3a] hover:border-[#00e8ff] hover:bg-[#12151c]'
+              : 'border-[#2a2f3a] hover:border-[#c6ff5e] hover:bg-[#12151c]'
             }
             ${isLoading ? 'pointer-events-none opacity-50' : ''}
           `}
@@ -270,7 +273,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
               <div className="relative w-full max-h-48 overflow-hidden rounded-xl flex items-center justify-center">
                 {preview === 'pdf' ? (
                   <div className="p-8 bg-[#161922] rounded-xl border border-[#242432]">
-                    <FileText className="w-16 h-16 text-[#00e8ff]" />
+                  <FileText className="w-16 h-16 text-[#c6ff5e]" />
                   </div>
                 ) : (
                   <img
@@ -312,7 +315,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                 </p>
               </div>
               <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#161a24] text-xs font-medium text-gray-300 border border-[#242432]">
-                <ImageIcon className="w-4 h-4 text-[#00e8ff]" />
+                <ImageIcon className="w-4 h-4 text-[#c6ff5e]" />
                 <span>JPG, PNG, WebP, PDF</span>
               </div>
             </div>
@@ -343,7 +346,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
                 placeholder="Example:&#10;&#10;Day 1: Push&#10;Bench Press - 4x8-12 @ 185lbs, Rest: 90 sec&#10;Overhead Press - 3x10 @ 95lbs&#10;&#10;Day 2: Pull&#10;Deadlift - 4x6 @ 225lbs&#10;Pull-ups - 3x8-10&#10;&#10;Day 3: Rest"
-                className="w-full h-64 p-4 border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 resize-none focus:ring-2 focus:ring-[#00e8ff] focus:border-transparent transition-all"
+                className="w-full h-64 p-4 border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 resize-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent transition-all"
                 disabled={isLoading}
               />
               <button
@@ -401,7 +404,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                         handleManualDayChange(day.id, { name: e.target.value })
                       }
                       placeholder="e.g., Day 1 - Push"
-                      className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                      className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                       disabled={isLoading}
                     />
                     <div className="flex items-center gap-2">
@@ -431,7 +434,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                           </h3>
                           <button
                             onClick={() => handleAddManualExercise(day.id)}
-                            className="text-sm text-[#00e8ff] hover:text-[#8ff5ff] font-semibold"
+                            className="text-sm text-[#c6ff5e] hover:text-[#8ff5ff] font-semibold"
                             disabled={isLoading}
                           >
                             + Add Exercise
@@ -466,7 +469,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                                 })
                               }
                               placeholder="Exercise name"
-                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                               disabled={isLoading}
                             />
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -478,7 +481,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                                   })
                                 }
                                 placeholder="Sets"
-                                className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                                className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                                 disabled={isLoading}
                               />
                               <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#2a2f3a] bg-[#0b0e14] p-1">
@@ -507,7 +510,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                                   }
                                   className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors ${
                                     exercise.type === 'time'
-                                      ? 'bg-[#1f232b] text-[#00e8ff] border border-[#2f3340]'
+                                      ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340]'
                                       : 'text-gray-300 hover:bg-[#141821]'
                                   }`}
                                   disabled={isLoading}
@@ -528,7 +531,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                                   ? 'Duration (e.g., 60 sec)'
                                   : 'Reps (e.g., 8-12)'
                               }
-                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                               disabled={isLoading}
                             />
                             {exercise.type === 'reps' && (
@@ -540,7 +543,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                                   })
                                 }
                                 placeholder="Weight (optional)"
-                                className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                                className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                                 disabled={isLoading}
                               />
                             )}
@@ -552,7 +555,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                                 })
                               }
                               placeholder="Rest time (optional)"
-                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                               disabled={isLoading}
                             />
                           </div>

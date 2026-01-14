@@ -64,7 +64,7 @@ export default function ProgressView({
         <div className="flex items-center p-4">
           <button
             onClick={onBack}
-            className="min-w-[44px] min-h-[44px] -ml-2 rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors"
+            className="min-w-[44px] min-h-[44px] -ml-2 rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors flex items-center justify-center"
           >
             <ArrowLeft className="w-6 h-6 text-gray-200" />
           </button>

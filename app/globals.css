@@ -4,7 +4,7 @@
   --background: #101014;
   --foreground: #ececf2;
   --accent-lime: #c6ff5e;
-  --accent-cyber: #00e8ff;
+  --accent-cyber: #c6ff5e;
   --card: #15151c;
   --card-border: #242432;
 }
@@ -94,6 +94,11 @@ body {
 /* Smooth scrolling */
 html {
   scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+body {
+  overscroll-behavior: none;
 }
 
 /* Custom scrollbar for webkit browsers */

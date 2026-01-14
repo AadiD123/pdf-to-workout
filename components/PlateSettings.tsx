@@ -19,9 +19,9 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
     
     // Load barbell weight from localStorage
     try {
-      const stored = localStorage.getItem('barbell-weight');
-      if (stored) {
-        setBarbellWeight(parseFloat(stored));
+    const stored = localStorage.getItem('barbell-weight');
+    if (stored) {
+      setBarbellWeight(parseFloat(stored));
       }
     } catch (error) {
       console.warn('Failed to read barbell weight from localStorage:', error);
@@ -31,7 +31,7 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
   const handleSave = () => {
     savePlateConfiguration(plates);
     try {
-      localStorage.setItem('barbell-weight', barbellWeight.toString());
+    localStorage.setItem('barbell-weight', barbellWeight.toString());
     } catch (error) {
       console.warn('Failed to save barbell weight to localStorage:', error);
     }
@@ -94,7 +94,7 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
             type="number"
             value={barbellWeight}
             onChange={(e) => setBarbellWeight(parseFloat(e.target.value) || 45)}
-            className="w-full min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+            className="w-full min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
           />
         </div>
 
@@ -114,7 +114,7 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
                       type="number"
                       value={plate.weight}
                       onChange={(e) => handleUpdatePlate(originalIndex, 'weight', parseFloat(e.target.value) || 0)}
-                      className="w-24 min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                      className="w-24 min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                       placeholder="Weight"
                     />
                     <span className="text-sm text-gray-500">lbs ×</span>
@@ -122,7 +122,7 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
                       type="number"
                       value={plate.available}
                       onChange={(e) => handleUpdatePlate(originalIndex, 'available', parseInt(e.target.value) || 0)}
-                      className="w-20 min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+                      className="w-20 min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                       placeholder="Count"
                     />
                     <span className="text-sm text-gray-500">plates</span>
@@ -149,11 +149,11 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
               value={newPlateWeight}
               onChange={(e) => setNewPlateWeight(e.target.value)}
               placeholder="Weight (lbs)"
-              className="flex-1 min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff]"
+              className="flex-1 min-h-[44px] px-3 py-2 border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
             />
             <button
               onClick={handleAddPlate}
-              className="px-4 py-2 min-h-[44px] bg-[#00e8ff] hover:bg-[#00d8ef] text-black rounded-lg font-medium flex items-center gap-2"
+              className="px-4 py-2 min-h-[44px] bg-[#c6ff5e] hover:bg-[#b6f54e] text-black rounded-lg font-medium flex items-center gap-2"
             >
               <Plus className="w-4 h-4" />
               Add

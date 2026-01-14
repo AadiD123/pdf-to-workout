@@ -7,6 +7,7 @@ import RestTimer from './RestTimer';
 import { TrendingUp, MoreVertical, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
+import { triggerHaptic } from '@/lib/haptics';
 
 interface WorkoutTrackerProps {
   workoutPlan: WorkoutPlan;
@@ -114,6 +115,7 @@ export default function WorkoutTracker({
     
     const exerciseName = prompt('Enter exercise name:');
     if (!exerciseName || !exerciseName.trim()) return;
+    triggerHaptic(10);
     
     const sets = prompt('Number of sets:', '3');
     if (!sets || isNaN(parseInt(sets))) return;
@@ -290,7 +292,7 @@ export default function WorkoutTracker({
         {onAddExercise && (
           <button
             onClick={() => handleAddExercise()}
-            className="w-full py-3 px-4 mt-4 border-2 border-dashed border-[#2a2f3a] rounded-xl text-gray-300 hover:border-[#00e8ff] hover:text-[#00e8ff] transition-colors font-semibold"
+            className="w-full py-3 px-4 mt-4 border-2 border-dashed border-[#2a2f3a] rounded-xl text-gray-300 hover:border-[#c6ff5e] hover:text-[#c6ff5e] transition-colors font-semibold"
           >
             + Add Exercise
           </button>
@@ -301,7 +303,10 @@ export default function WorkoutTracker({
       <div className="fixed bottom-0 left-0 right-0 z-20">
         <div className="bg-[#101014]/90 backdrop-blur border-t border-[#242432] px-4 pb-4 pt-3">
           <button
-            onClick={() => setShowCompleteDialog(true)}
+            onClick={() => {
+              triggerHaptic(15);
+              setShowCompleteDialog(true);
+            }}
             className="w-full min-h-[52px] rounded-xl border border-[#c6ff5e] text-[#c6ff5e] bg-[#151c14] hover:bg-[#1c2418] font-semibold text-lg transition-colors glow-lime-strong"
           >
             Finish Workout
@@ -330,7 +335,7 @@ export default function WorkoutTracker({
                   onChange={(e) => setSessionNotes(e.target.value)}
                   placeholder="How did it go? (optional)"
                   rows={3}
-                  className="w-full px-4 py-3 text-base border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#00e8ff] resize-none"
+                  className="w-full px-4 py-3 text-base border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] resize-none"
                 />
               </div>
               <div className="flex flex-col gap-3">

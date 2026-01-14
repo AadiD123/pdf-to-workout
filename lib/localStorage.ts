@@ -289,6 +289,29 @@ export function addDayToPlan(day: WorkoutDay): void {
   }
 }
 
+export function moveDayInPlan(dayId: string, direction: 'up' | 'down'): void {
+  const plan = loadWorkoutPlan();
+  if (!plan) return;
+  const index = plan.days.findIndex(day => day.id === dayId);
+  if (index === -1) return;
+  const targetIndex = direction === 'up' ? index - 1 : index + 1;
+  if (targetIndex < 0 || targetIndex >= plan.days.length) return;
+  const updatedDays = [...plan.days];
+  [updatedDays[index], updatedDays[targetIndex]] = [updatedDays[targetIndex], updatedDays[index]];
+  plan.days = updatedDays;
+  saveWorkoutPlan(plan);
+}
+
+export function reorderDaysInPlan(dayOrder: string[]): void {
+  const plan = loadWorkoutPlan();
+  if (!plan) return;
+  const dayMap = new Map(plan.days.map(day => [day.id, day]));
+  const reordered = dayOrder.map(id => dayMap.get(id)).filter(Boolean) as WorkoutDay[];
+  const remaining = plan.days.filter(day => !dayOrder.includes(day.id));
+  plan.days = [...reordered, ...remaining];
+  saveWorkoutPlan(plan);
+}
+
 export function addExerciseToDay(dayId: string, exercise: Exercise): void {
   const plan = loadWorkoutPlan();
   if (plan) {
