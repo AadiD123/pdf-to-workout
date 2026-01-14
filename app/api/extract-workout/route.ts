@@ -1,26 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { extractWorkoutFromImage } from '@/lib/gemini';
+import { extractWorkoutFromImage, extractWorkoutFromText } from '@/lib/gemini';
 import { WorkoutPlan, WorkoutDay, Exercise } from '@/types/workout';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('image') as File;
+    const file = formData.get('image') as File | null;
+    const text = formData.get('text') as string | null;
 
-    if (!file) {
+    let extractedData: any;
+
+    if (text) {
+      // Handle text input
+      extractedData = await extractWorkoutFromText(text);
+    } else if (file) {
+      // Handle file upload
+      // Convert file to base64
+      const bytes = await file.arrayBuffer();
+      const buffer = Buffer.from(bytes);
+      const base64Data = buffer.toString('base64');
+
+      // Extract workout data using Gemini
+      extractedData = await extractWorkoutFromImage(base64Data, file.type);
+    } else {
       return NextResponse.json(
-        { error: 'No image file provided' },
+        { error: 'No file or text provided' },
         { status: 400 }
       );
     }
-
-    // Convert file to base64
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-    const base64Data = buffer.toString('base64');
-
-    // Extract workout data using Gemini
-    const extractedData = await extractWorkoutFromImage(base64Data, file.type);
 
     const timestamp = Date.now();
 

@@ -138,3 +138,94 @@ Important:
     throw new Error("Failed to parse workout data from image");
   }
 }
+
+export async function extractWorkoutFromText(workoutText: string) {
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+
+  const prompt = `You are a workout plan extraction assistant. Analyze the provided text of a workout plan and extract all exercise information into a structured JSON format.
+
+The workout plan may be organized by days (e.g., "Day 1: Push", "Day 2: Pull", "Monday - Chest", etc.) or may be a single workout. Some days might be REST DAYS or RECOVERY DAYS with no exercises.
+
+Please extract the following information:
+- Workout plan name (overall title, or create a descriptive one if not provided)
+- Days/splits (if the plan is organized by days)
+- Whether each day is a rest day
+- For each exercise:
+  * Exercise name
+  * Number of sets
+  * Exercise type: "reps" for rep-based exercises, "time" for time-based exercises (planks, holds, cardio intervals)
+  * Number of reps (can be a range like "8-12" or specific number like "10") OR duration for time-based exercises (e.g., "60 sec", "1 min", "30s")
+  * Weight/resistance (if specified)
+  * Rest time between sets (if specified)
+  * Any notes, tips, or comments about the exercise (form cues, tempo, technique notes, etc.)
+
+Return ONLY a valid JSON object with this structure:
+
+If the workout is organized by DAYS/SPLITS:
+{
+  "name": "Workout Plan Name",
+  "days": [
+    {
+      "name": "Day 1: Push",
+      "isRestDay": false,
+      "exercises": [
+        {
+          "name": "Bench Press",
+          "type": "reps",
+          "sets": 3,
+          "reps": "8-12",
+          "weight": "135 lbs",
+          "restTime": "90 sec",
+          "notes": "Focus on controlled descent"
+        }
+      ]
+    },
+    {
+      "name": "Day 2: Rest",
+      "isRestDay": true,
+      "exercises": []
+    }
+  ]
+}
+
+If the workout is a SINGLE DAY (not split):
+{
+  "name": "Full Body Workout",
+  "days": [
+    {
+      "name": "Full Body",
+      "isRestDay": false,
+      "exercises": [...]
+    }
+  ]
+}
+
+Important guidelines:
+1. Look for keywords like "Rest", "Rest Day", "Recovery", "Off Day" to identify rest days
+2. For time-based exercises, look for indicators like "sec", "min", "seconds", "minutes", or time format like "0:30", "1:00"
+3. If sets have different rep counts (e.g., "12, 10, 8 reps"), use the first value or represent as "12-8"
+4. Do NOT include emojis in any text
+5. Be smart about inferring structure from common formatting patterns
+6. Return ONLY the JSON object, no additional text or markdown
+
+Workout text to analyze:
+${workoutText}`;
+
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  let cleanedText = response.text().trim();
+
+  // Remove markdown code blocks if present
+  if (cleanedText.startsWith("```json")) {
+    cleanedText = cleanedText.replace(/```json\n?/, "").replace(/```\n?$/, "");
+  } else if (cleanedText.startsWith("```")) {
+    cleanedText = cleanedText.replace(/```\n?/, "").replace(/```\n?$/, "");
+  }
+
+  try {
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error("Failed to parse Gemini response:", cleanedText);
+    throw new Error("Failed to parse workout data from text");
+  }
+}

@@ -193,17 +193,17 @@ export default function RestTimer({
       <div className="flex items-center gap-2">
         <span className={`text-lg font-bold ${
           timeLeft === 0
-            ? "text-green-500"
+            ? "text-[#c6ff5e]"
             : timeLeft <= 10
-            ? "text-red-500"
-            : "text-gray-900 dark:text-gray-100"
+            ? "text-red-400"
+            : "text-gray-100"
         }`}>
           {formatTime(timeLeft)}
         </span>
         {!isRunning && (
           <button
             onClick={handleStartPause}
-            className="p-1 rounded bg-blue-600 hover:bg-blue-700 text-white"
+            className="p-1 rounded bg-[#c6ff5e] hover:bg-[#b6f54e] text-black"
           >
             <Play className="w-3 h-3" />
           </button>
@@ -211,12 +211,12 @@ export default function RestTimer({
         {isRunning && (
           <button
             onClick={handleStartPause}
-            className="p-1 rounded bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+            className="p-1 rounded bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200"
           >
             <Pause className="w-3 h-3" />
           </button>
         )}
-        <button onClick={handleClose} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400">
+        <button onClick={handleClose} className="p-1 rounded hover:bg-[#1f232b] text-gray-400">
           <X className="w-3 h-3" />
         </button>
       </div>
@@ -226,38 +226,38 @@ export default function RestTimer({
   // Inline timer (shown in header)
   if (inline && isOpen) {
     return (
-      <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-3">
+      <div className="bg-[#15151c] rounded-xl border border-[#242432] p-3">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Timer className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+            <Timer className="w-4 h-4 text-[#00e8ff]" />
+            <span className="text-sm font-semibold text-gray-300">
               Rest
             </span>
           </div>
           <div
             className={`text-3xl font-bold ${
               timeLeft === 0
-                ? "text-green-500"
+                ? "text-[#c6ff5e]"
                 : timeLeft <= 10
-                ? "text-red-500"
-                : "text-gray-900 dark:text-gray-100"
+                ? "text-red-400"
+                : "text-gray-100"
             }`}
           >
             {formatTime(timeLeft)}
           </div>
           <button
             onClick={handleClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+            className="text-gray-400 hover:text-gray-200 p-1"
           >
             ✕
           </button>
         </div>
 
         {/* Progress Bar */}
-        <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden mb-2">
+        <div className="h-2 bg-[#1f232b] rounded-full overflow-hidden mb-2">
           <div
             className={`h-full transition-all duration-1000 ${
-              timeLeft === 0 ? "bg-green-500" : "bg-blue-500"
+              timeLeft === 0 ? "bg-[#c6ff5e]" : "bg-[#00e8ff]"
             }`}
             style={{ width: `${progressPercentage}%` }}
           />
@@ -269,7 +269,7 @@ export default function RestTimer({
             <>
               <button
                 onClick={() => adjustTime(-15)}
-                className="p-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+                className="min-w-[44px] min-h-[44px] rounded-lg bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200 flex items-center justify-center"
               >
                 <Minus className="w-4 h-4" />
               </button>
@@ -277,7 +277,7 @@ export default function RestTimer({
           )}
           <button
             onClick={handleStartPause}
-            className="flex-1 flex items-center justify-center gap-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
+            className="flex-1 flex items-center justify-center gap-1 min-h-[44px] py-2 bg-[#c6ff5e] hover:bg-[#b6f54e] text-black rounded-lg font-semibold text-sm transition-colors"
           >
             {isRunning ? (
               <>
@@ -294,22 +294,22 @@ export default function RestTimer({
           {!isRunning && (
             <button
               onClick={() => adjustTime(15)}
-              className="p-1.5 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+              className="min-w-[44px] min-h-[44px] rounded-lg bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200 flex items-center justify-center"
             >
               <Plus className="w-4 h-4" />
             </button>
           )}
           <button
             onClick={handleReset}
-            className="p-2 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg transition-colors"
+            className="min-w-[44px] min-h-[44px] bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200 rounded-lg transition-colors flex items-center justify-center"
           >
             <RotateCcw className="w-4 h-4" />
           </button>
         </div>
 
         {timeLeft === 0 && (
-          <div className="mt-2 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
-            <p className="text-xs text-green-600 dark:text-green-400 font-semibold">
+          <div className="mt-2 p-2 bg-[#1a2216] border border-[#2a3a2b] rounded-lg text-center">
+            <p className="text-xs text-[#c6ff5e] font-semibold">
               Rest complete!
             </p>
           </div>
@@ -323,21 +323,21 @@ export default function RestTimer({
       {/* Floating Compact Timer */}
       {isOpen && !inline && (
         <div
-          className="fixed bottom-4 right-4 z-50 bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border-2 border-gray-200 dark:border-gray-800 overflow-hidden"
+          className="fixed bottom-4 right-4 z-50 bg-[#15151c] rounded-2xl shadow-2xl border-2 border-[#242432] overflow-hidden"
           style={{ width: "280px" }}
         >
           <div className="p-4">
             {/* Header */}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <Timer className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <h3 className="font-bold text-gray-900 dark:text-gray-100">
+                <Timer className="w-5 h-5 text-[#00e8ff]" />
+                <h3 className="font-bold text-gray-100">
                   Rest Timer
                 </h3>
               </div>
               <button
                 onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+                className="text-gray-400 hover:text-gray-200 p-1"
               >
                 ✕
               </button>
@@ -348,19 +348,19 @@ export default function RestTimer({
               <div
                 className={`text-5xl font-bold ${
                   timeLeft === 0
-                    ? "text-green-500"
+                    ? "text-[#c6ff5e]"
                     : timeLeft <= 10
-                    ? "text-red-500"
-                    : "text-gray-900 dark:text-gray-100"
+                    ? "text-red-400"
+                    : "text-gray-100"
                 }`}
               >
                 {formatTime(timeLeft)}
               </div>
               {/* Progress Bar */}
-              <div className="h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden mt-3">
+              <div className="h-2 bg-[#1f232b] rounded-full overflow-hidden mt-3">
                 <div
                   className={`h-full transition-all duration-1000 ${
-                    timeLeft === 0 ? "bg-green-500" : "bg-blue-500"
+                    timeLeft === 0 ? "bg-[#c6ff5e]" : "bg-[#00e8ff]"
                   }`}
                   style={{ width: `${progressPercentage}%` }}
                 />
@@ -372,16 +372,16 @@ export default function RestTimer({
               <div className="flex items-center justify-center gap-2 mb-3">
                 <button
                   onClick={() => adjustTime(-15)}
-                  className="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+                  className="min-w-[44px] min-h-[44px] rounded-lg bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200 flex items-center justify-center"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                <span className="text-xs text-gray-500 font-medium">
                   ±15s
                 </span>
                 <button
                   onClick={() => adjustTime(15)}
-                  className="p-2 rounded-lg bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700"
+                  className="min-w-[44px] min-h-[44px] rounded-lg bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200 flex items-center justify-center"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -392,7 +392,7 @@ export default function RestTimer({
             <div className="flex gap-2">
               <button
                 onClick={handleStartPause}
-                className="flex-1 flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 min-h-[44px] py-3 bg-[#c6ff5e] hover:bg-[#b6f54e] text-black rounded-lg font-semibold transition-colors"
               >
                 {isRunning ? (
                   <>
@@ -408,7 +408,7 @@ export default function RestTimer({
               </button>
               <button
                 onClick={handleReset}
-                className="px-4 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-lg transition-colors"
+                className="px-4 py-3 min-h-[44px] bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200 rounded-lg transition-colors"
               >
                 <RotateCcw className="w-5 h-5" />
               </button>
@@ -416,8 +416,8 @@ export default function RestTimer({
 
             {/* Completion Message */}
             {timeLeft === 0 && (
-              <div className="mt-3 p-2 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
-              <p className="text-sm text-green-600 dark:text-green-400 font-semibold">
+              <div className="mt-3 p-2 bg-[#1a2216] border border-[#2a3a2b] rounded-lg text-center">
+              <p className="text-sm text-[#c6ff5e] font-semibold">
                 Rest complete!
               </p>
               </div>

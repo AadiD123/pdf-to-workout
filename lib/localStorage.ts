@@ -1,4 +1,4 @@
-import { WorkoutPlan, WorkoutSession, Exercise, SetRecord, CompletedExercise } from '@/types/workout';
+import { WorkoutPlan, WorkoutSession, Exercise, SetRecord, CompletedExercise, WorkoutDay } from '@/types/workout';
 
 const WORKOUT_PLAN_KEY = 'workout-plan';
 const CURRENT_SESSION_KEY = 'current-session';
@@ -253,6 +253,74 @@ export function deleteWorkoutPlan(planId: string): void {
     
     // Update the all plans list
     localStorage.setItem(ALL_WORKOUT_PLANS_KEY, JSON.stringify(filteredPlans));
+  }
+}
+
+export function addDayToPlan(day: WorkoutDay): void {
+  const plan = loadWorkoutPlan();
+  if (plan) {
+    plan.days.push(day);
+    saveWorkoutPlan(plan);
+  }
+}
+
+export function addExerciseToDay(dayId: string, exercise: Exercise): void {
+  const plan = loadWorkoutPlan();
+  if (plan) {
+    const day = plan.days.find(d => d.id === dayId);
+    if (day) {
+      day.exercises.push(exercise);
+      saveWorkoutPlan(plan);
+    }
+  }
+}
+
+export function deleteExerciseFromDay(dayId: string, exerciseId: string): void {
+  const plan = loadWorkoutPlan();
+  if (plan) {
+    const day = plan.days.find(d => d.id === dayId);
+    if (day) {
+      day.exercises = day.exercises.filter(ex => ex.id !== exerciseId);
+      saveWorkoutPlan(plan);
+    }
+  }
+}
+
+export function addSetToExercise(dayId: string, exerciseId: string): void {
+  const plan = loadWorkoutPlan();
+  if (plan) {
+    const day = plan.days.find(d => d.id === dayId);
+    if (day) {
+      const exercise = day.exercises.find(ex => ex.id === exerciseId);
+      if (exercise) {
+        exercise.sets += 1;
+        const newSetRecord: SetRecord = {
+          setNumber: exercise.completedSets.length + 1,
+          reps: 0,
+          weight: 0,
+          completed: false
+        };
+        exercise.completedSets.push(newSetRecord);
+        saveWorkoutPlan(plan);
+      }
+    }
+  }
+}
+
+export function deleteSetFromExercise(dayId: string, exerciseId: string, setNumber: number): void {
+  const plan = loadWorkoutPlan();
+  if (plan) {
+    const day = plan.days.find(d => d.id === dayId);
+    if (day) {
+      const exercise = day.exercises.find(ex => ex.id === exerciseId);
+      if (exercise && exercise.sets > 1) {
+        exercise.sets -= 1;
+        exercise.completedSets = exercise.completedSets
+          .filter(s => s.setNumber !== setNumber)
+          .map((s, index) => ({ ...s, setNumber: index + 1 }));
+        saveWorkoutPlan(plan);
+      }
+    }
   }
 }
 

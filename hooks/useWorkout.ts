@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { WorkoutPlan, SetRecord } from '@/types/workout';
+import { WorkoutPlan, SetRecord, WorkoutDay } from '@/types/workout';
 import {
   loadWorkoutPlan,
   saveWorkoutPlan,
@@ -15,7 +15,12 @@ import {
   completeCurrentSession,
   loadAllWorkoutPlans,
   switchToWorkoutPlan,
-  deleteWorkoutPlan
+  deleteWorkoutPlan,
+  addDayToPlan,
+  addExerciseToDay,
+  deleteExerciseFromDay,
+  addSetToExercise,
+  deleteSetFromExercise
 } from '@/lib/localStorage';
 
 export function useWorkout() {
@@ -100,6 +105,36 @@ export function useWorkout() {
     setAllWorkoutPlans(allPlans);
   };
 
+  const handleAddDay = (day: WorkoutDay) => {
+    addDayToPlan(day);
+    const plan = loadWorkoutPlan();
+    setWorkoutPlan(plan);
+  };
+
+  const handleAddExercise = (dayId: string, exercise: any) => {
+    addExerciseToDay(dayId, exercise);
+    const plan = loadWorkoutPlan();
+    setWorkoutPlan(plan);
+  };
+
+  const handleDeleteExercise = (dayId: string, exerciseId: string) => {
+    deleteExerciseFromDay(dayId, exerciseId);
+    const plan = loadWorkoutPlan();
+    setWorkoutPlan(plan);
+  };
+
+  const handleAddSet = (dayId: string, exerciseId: string) => {
+    addSetToExercise(dayId, exerciseId);
+    const plan = loadWorkoutPlan();
+    setWorkoutPlan(plan);
+  };
+
+  const handleDeleteSet = (dayId: string, exerciseId: string, setNumber: number) => {
+    deleteSetFromExercise(dayId, exerciseId, setNumber);
+    const plan = loadWorkoutPlan();
+    setWorkoutPlan(plan);
+  };
+
   return {
     workoutPlan,
     allWorkoutPlans,
@@ -114,7 +149,12 @@ export function useWorkout() {
     handleResetSession,
     handleClearWorkout,
     handleSwitchPlan,
-    handleDeletePlan
+    handleDeletePlan,
+    handleAddDay,
+    handleAddExercise,
+    handleDeleteExercise,
+    handleAddSet,
+    handleDeleteSet
   };
 }
 
