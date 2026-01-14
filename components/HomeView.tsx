@@ -44,6 +44,7 @@ export default function HomeView({
   onAddDay,
   onReorderDays,
   onDeleteDay,
+  onDeleteAllData,
 }: HomeViewProps) {
   const { confirm } = useDialog();
   const [showPlateSettings, setShowPlateSettings] = useState(false);
