@@ -30,9 +30,10 @@ interface HomeViewProps {
   onStartDay: (dayId: string) => void;
   onViewProgress: () => void;
   onNewWorkout: () => void;
-  onAddDay: () => void;
+  onAddDay: (dayName: string, isRestDay: boolean) => void;
   onReorderDays: (dayOrder: string[]) => void;
   onDeleteDay: (dayId: string) => void;
+  onDeleteAllData: () => void;
 }
 
 export default function HomeView({
@@ -48,6 +49,10 @@ export default function HomeView({
   const [showPlateSettings, setShowPlateSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isEditingDays, setIsEditingDays] = useState(false);
+  const [showAddDayModal, setShowAddDayModal] = useState(false);
+  const [newDayName, setNewDayName] = useState("");
+  const [newDayIsRest, setNewDayIsRest] = useState(false);
+  const [dayFormError, setDayFormError] = useState("");
   const [draggedDayId, setDraggedDayId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragMovedRef = useRef(false);
@@ -131,6 +136,24 @@ export default function HomeView({
                 >
                   <Settings className="w-4 h-4 text-[#c6ff5e]" />
                   Plate Weight Settings
+                </button>
+                <button
+                  onClick={() => {
+                    (async () => {
+                      if (
+                        await confirm(
+                          "Delete all user data? This removes all plans, history, and settings."
+                        )
+                      ) {
+                        onDeleteAllData();
+                      }
+                      setShowMenu(false);
+                    })();
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-300 hover:bg-red-500/10 flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete All User Data
                 </button>
               </div>
             )}
@@ -249,7 +272,12 @@ export default function HomeView({
               )}
             </button>
             <button
-              onClick={onAddDay}
+              onClick={() => {
+                setNewDayName(`Day ${workoutPlan.days.length + 1}`);
+                setNewDayIsRest(false);
+                setDayFormError("");
+                setShowAddDayModal(true);
+              }}
               className="min-h-[40px] px-3 rounded-lg bg-[#15151c] border border-[#242432] text-gray-200 transition-colors flex items-center justify-center text-sm font-semibold hover:bg-[#1f232b]"
               title="Add a workout day"
             >
@@ -398,6 +426,68 @@ export default function HomeView({
       {/* Plate Settings Modal */}
       {showPlateSettings && (
         <PlateSettings onClose={() => setShowPlateSettings(false)} />
+      )}
+
+      {/* Add Day Modal */}
+      {showAddDayModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
+          <div
+            className="w-full max-w-md rounded-2xl border border-[#242432] bg-[#15151c] p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-gray-100 mb-4">
+              Add Workout Day
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Day name
+                </label>
+                <input
+                  value={newDayName}
+                  onChange={(event) => setNewDayName(event.target.value)}
+                  className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                  placeholder="e.g., Day 1 - Push"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setNewDayIsRest((prev) => !prev)}
+                className={`w-full rounded-xl border px-4 py-3 text-sm font-semibold transition-colors ${
+                  newDayIsRest
+                    ? "border-[#2a3a2b] bg-[#1a2216] text-[#c6ff5e]"
+                    : "border-[#2a2f3a] bg-[#0f1218] text-gray-300 hover:bg-[#141821]"
+                }`}
+              >
+                {newDayIsRest ? "Rest Day" : "Training Day"}
+              </button>
+              {dayFormError && (
+                <p className="text-sm text-red-300">{dayFormError}</p>
+              )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  onClick={() => setShowAddDayModal(false)}
+                  className="min-h-[44px] rounded-xl border border-[#242432] bg-[#1f232b] px-5 py-2 text-gray-200 font-semibold hover:bg-[#2a2f3a] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    if (!newDayName.trim()) {
+                      setDayFormError("Please enter a day name.");
+                      return;
+                    }
+                    onAddDay(newDayName.trim(), newDayIsRest);
+                    setShowAddDayModal(false);
+                  }}
+                  className="min-h-[44px] rounded-xl bg-[#c6ff5e] px-5 py-2 text-black font-semibold hover:bg-[#b6f54e] transition-colors"
+                >
+                  Create Day
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

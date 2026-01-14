@@ -319,6 +319,17 @@ export function deleteDayFromPlan(dayId: string): void {
   saveWorkoutPlan(plan);
 }
 
+export function clearAllUserData(): void {
+  if (typeof window !== 'undefined') {
+    safeRemoveItem(WORKOUT_PLAN_KEY);
+    safeRemoveItem(CURRENT_SESSION_KEY);
+    safeRemoveItem(ALL_WORKOUT_PLANS_KEY);
+    safeRemoveItem(ACTIVE_PLAN_ID_KEY);
+    safeRemoveItem('plate-configuration');
+    safeRemoveItem('barbell-weight');
+  }
+}
+
 export function addExerciseToDay(dayId: string, exercise: Exercise): void {
   const plan = loadWorkoutPlan();
   if (plan) {

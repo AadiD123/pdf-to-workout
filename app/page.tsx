@@ -13,7 +13,7 @@ import { Dumbbell, ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function Home() {
-  const { confirm, prompt } = useDialog();
+  const { confirm } = useDialog();
   const {
     workoutPlan,
     allWorkoutPlans,
@@ -32,6 +32,7 @@ export default function Home() {
     handleAddDay,
     handleReorderDays,
     handleDeleteDay,
+    handleDeleteAllData,
     handleAddExercise,
     handleDeleteExercise,
     handleAddSet,
@@ -234,15 +235,7 @@ export default function Home() {
     }
   };
 
-  const handleAddWorkoutDay = async () => {
-    const dayName = await prompt("Day name:", {
-      defaultValue: "Day " + ((workoutPlan?.days.length ?? 0) + 1),
-      placeholder: "e.g., Day 1 - Push",
-    });
-    if (!dayName || !dayName.trim()) return;
-
-    const isRestDay = await confirm("Is this a rest day?");
-
+  const handleAddWorkoutDay = (dayName: string, isRestDay: boolean) => {
     handleAddDay({
       id: `day-${Date.now()}`,
       name: dayName.trim(),
@@ -343,6 +336,7 @@ export default function Home() {
               onAddDay={handleAddWorkoutDay}
               onReorderDays={handleReorderDays}
               onDeleteDay={handleDeleteDay}
+              onDeleteAllData={handleDeleteAllData}
             />
           </motion.div>
         ) : view === "progress" ? (

@@ -32,6 +32,8 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Custom animations and transitions */

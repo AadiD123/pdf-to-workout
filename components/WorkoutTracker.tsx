@@ -51,10 +51,20 @@ export default function WorkoutTracker({
   onAddSet,
   onDeleteSet,
 }: WorkoutTrackerProps) {
-  const { alert, confirm, prompt } = useDialog();
+  const { confirm } = useDialog();
   const [sessionNotes, setSessionNotes] = useState("");
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showAddExerciseDialog, setShowAddExerciseDialog] = useState(false);
+  const [newExerciseName, setNewExerciseName] = useState("");
+  const [newExerciseSets, setNewExerciseSets] = useState("3");
+  const [newExerciseType, setNewExerciseType] = useState<"reps" | "time">(
+    "reps"
+  );
+  const [newExerciseReps, setNewExerciseReps] = useState("10");
+  const [newExerciseWeight, setNewExerciseWeight] = useState("");
+  const [newExerciseRestTime, setNewExerciseRestTime] = useState("");
+  const [addExerciseError, setAddExerciseError] = useState("");
   const [selectedDayId] = useState(propSelectedDayId); // Fixed to the day selected from home
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [activeRestTimer, setActiveRestTimer] = useState<string | null>(null); // Track which exercise has active timer
@@ -124,58 +134,57 @@ export default function WorkoutTracker({
     onResetSession(selectedDayId);
   };
 
-  const handleAddExercise = async () => {
+  const openAddExerciseDialog = () => {
     if (!onAddExercise) return;
-
-    const exerciseName = await prompt("Enter exercise name:", {
-      placeholder: "e.g., Bench Press",
-      title: "Add Exercise",
-    });
-    if (!exerciseName || !exerciseName.trim()) return;
+    setNewExerciseName("");
+    setNewExerciseSets("3");
+    setNewExerciseType("reps");
+    setNewExerciseReps("10");
+    setNewExerciseWeight("");
+    setNewExerciseRestTime("");
+    setAddExerciseError("");
+    setShowAddExerciseDialog(true);
     triggerHaptic(10);
+  };
 
-    const sets = await prompt("Number of sets:", { defaultValue: "3" });
-    if (!sets || isNaN(parseInt(sets))) {
-      void alert("Please enter a valid number of sets.");
+  const handleCreateExercise = () => {
+    if (!onAddExercise) return;
+    if (!newExerciseName.trim()) {
+      setAddExerciseError("Please enter an exercise name.");
+      return;
+    }
+    const setsValue = parseInt(newExerciseSets, 10);
+    if (Number.isNaN(setsValue) || setsValue <= 0) {
+      setAddExerciseError("Please enter a valid number of sets.");
+      return;
+    }
+    if (!newExerciseReps.trim()) {
+      setAddExerciseError(
+        newExerciseType === "time"
+          ? "Please enter a duration."
+          : "Please enter reps."
+      );
       return;
     }
 
-    const type = (await confirm("Is this a time-based exercise?"))
-      ? "time"
-      : "reps";
-
-    const reps = await prompt(
-      type === "time"
-        ? 'Duration (e.g., "60 sec", "1 min"):'
-        : 'Reps (e.g., "8-12", "10"):',
-      { defaultValue: type === "time" ? "60 sec" : "10" }
-    );
-    if (!reps || !reps.trim()) return;
-
-    const weight =
-      type === "reps"
-        ? await prompt('Weight (optional, e.g., "135 lbs"):', {
-            placeholder: "135 lbs",
-          })
-        : undefined;
-    const restTime = await prompt('Rest time (optional, e.g., "90 sec"):', {
-      placeholder: "90 sec",
-    });
-
     const newExercise = {
       id: `exercise-${Date.now()}`,
-      name: exerciseName.trim(),
-      type,
-      sets: parseInt(sets),
-      reps: reps.trim(),
-      weight: weight?.trim() || undefined,
-      restTime: restTime?.trim() || undefined,
+      name: newExerciseName.trim(),
+      type: newExerciseType,
+      sets: setsValue,
+      reps: newExerciseReps.trim(),
+      weight:
+        newExerciseType === "reps"
+          ? newExerciseWeight.trim() || undefined
+          : undefined,
+      restTime: newExerciseRestTime.trim() || undefined,
       notes: "",
       completed: false,
       completedSets: [],
     };
 
     onAddExercise(selectedDayId, newExercise);
+    setShowAddExerciseDialog(false);
   };
 
   return (
@@ -339,7 +348,7 @@ export default function WorkoutTracker({
         {/* Add Exercise Button */}
         {onAddExercise && (
           <button
-            onClick={() => handleAddExercise()}
+            onClick={() => openAddExerciseDialog()}
             className="w-full py-3 px-4 mt-4 border-2 border-dashed border-[#2a2f3a] rounded-xl text-gray-300 hover:border-[#c6ff5e] hover:text-[#c6ff5e] transition-colors font-semibold"
           >
             + Add Exercise
@@ -402,6 +411,131 @@ export default function WorkoutTracker({
                   className="w-full py-3 text-gray-400 hover:text-gray-100 font-medium transition-colors"
                 >
                   Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Exercise Dialog */}
+      {showAddExerciseDialog && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4">
+          <div
+            className="w-full max-w-md rounded-2xl border border-[#242432] bg-[#15151c] p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 className="text-xl font-bold text-gray-100 mb-4">
+              Add Exercise
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Exercise name
+                </label>
+                <input
+                  value={newExerciseName}
+                  onChange={(event) => setNewExerciseName(event.target.value)}
+                  className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                  placeholder="e.g., Bench Press"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Sets
+                  </label>
+                  <input
+                    value={newExerciseSets}
+                    onChange={(event) => setNewExerciseSets(event.target.value)}
+                    className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                    inputMode="numeric"
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Type
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 rounded-xl border border-[#2a2f3a] bg-[#0f1218] p-1">
+                    <button
+                      type="button"
+                      onClick={() => setNewExerciseType("reps")}
+                      className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                        newExerciseType === "reps"
+                          ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340]"
+                          : "text-gray-300 hover:bg-[#141821]"
+                      }`}
+                    >
+                      Reps
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setNewExerciseType("time")}
+                      className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors ${
+                        newExerciseType === "time"
+                          ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340]"
+                          : "text-gray-300 hover:bg-[#141821]"
+                      }`}
+                    >
+                      Time
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  {newExerciseType === "time" ? "Duration" : "Reps"}
+                </label>
+                <input
+                  value={newExerciseReps}
+                  onChange={(event) => setNewExerciseReps(event.target.value)}
+                  className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                  placeholder={newExerciseType === "time" ? "60 sec" : "8-12"}
+                />
+              </div>
+              {newExerciseType === "reps" && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Weight (optional)
+                  </label>
+                  <input
+                    value={newExerciseWeight}
+                    onChange={(event) =>
+                      setNewExerciseWeight(event.target.value)
+                    }
+                    className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                    placeholder="135 lbs"
+                  />
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Rest time (optional)
+                </label>
+                <input
+                  value={newExerciseRestTime}
+                  onChange={(event) =>
+                    setNewExerciseRestTime(event.target.value)
+                  }
+                  className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                  placeholder="90 sec"
+                />
+              </div>
+              {addExerciseError && (
+                <p className="text-sm text-red-300">{addExerciseError}</p>
+              )}
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                <button
+                  onClick={() => setShowAddExerciseDialog(false)}
+                  className="min-h-[44px] rounded-xl border border-[#242432] bg-[#1f232b] px-5 py-2 text-gray-200 font-semibold hover:bg-[#2a2f3a] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateExercise}
+                  className="min-h-[44px] rounded-xl bg-[#c6ff5e] px-5 py-2 text-black font-semibold hover:bg-[#b6f54e] transition-colors"
+                >
+                  Add Exercise
                 </button>
               </div>
             </div>
