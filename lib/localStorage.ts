@@ -312,6 +312,13 @@ export function reorderDaysInPlan(dayOrder: string[]): void {
   saveWorkoutPlan(plan);
 }
 
+export function deleteDayFromPlan(dayId: string): void {
+  const plan = loadWorkoutPlan();
+  if (!plan) return;
+  plan.days = plan.days.filter(day => day.id !== dayId);
+  saveWorkoutPlan(plan);
+}
+
 export function addExerciseToDay(dayId: string, exercise: Exercise): void {
   const plan = loadWorkoutPlan();
   if (plan) {

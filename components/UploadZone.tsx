@@ -3,6 +3,7 @@
 import { useState, useRef, DragEvent, ChangeEvent } from 'react';
 import { Upload, Image as ImageIcon, FileText, Type, Terminal, ScanLine, Plus } from 'lucide-react';
 import { triggerHaptic } from '@/lib/haptics';
+import { useDialog } from '@/components/DialogProvider';
 
 interface UploadZoneProps {
   onUpload: (file: File) => void;
@@ -52,6 +53,7 @@ const createEmptyDay = (): ManualDayInput => ({
 });
 
 export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isLoading, error }: UploadZoneProps) {
+  const { alert } = useDialog();
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [inputMode, setInputMode] = useState<'file' | 'text' | 'manual'>('file');
@@ -91,7 +93,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
     // Validate file type
     const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
     if (!validTypes.includes(file.type)) {
-      alert('Please upload a valid file (JPG, PNG, WebP, or PDF)');
+      void alert('Please upload a valid file (JPG, PNG, WebP, or PDF)');
       return;
     }
 

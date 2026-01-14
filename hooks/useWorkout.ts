@@ -19,6 +19,7 @@ import {
   addDayToPlan,
   moveDayInPlan,
   reorderDaysInPlan,
+  deleteDayFromPlan,
   addExerciseToDay,
   deleteExerciseFromDay,
   addSetToExercise,
@@ -125,6 +126,12 @@ export function useWorkout() {
     setWorkoutPlan(plan);
   };
 
+  const handleDeleteDay = (dayId: string) => {
+    deleteDayFromPlan(dayId);
+    const plan = loadWorkoutPlan();
+    setWorkoutPlan(plan);
+  };
+
   const handleAddExercise = (dayId: string, exercise: any) => {
     addExerciseToDay(dayId, exercise);
     const plan = loadWorkoutPlan();
@@ -167,6 +174,7 @@ export function useWorkout() {
     handleAddDay,
     handleMoveDay,
     handleReorderDays,
+    handleDeleteDay,
     handleAddExercise,
     handleDeleteExercise,
     handleAddSet,

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useWorkout } from "@/hooks/useWorkout";
+import { useDialog } from "@/components/DialogProvider";
 import UploadZone, { ManualPlanPayload } from "@/components/UploadZone";
 import WorkoutTracker from "@/components/WorkoutTracker";
 import ProgressView from "@/components/ProgressView";
@@ -12,6 +13,7 @@ import { Dumbbell, ArrowLeft } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export default function Home() {
+  const { confirm, prompt } = useDialog();
   const {
     workoutPlan,
     allWorkoutPlans,
@@ -29,6 +31,7 @@ export default function Home() {
     handleDeletePlan,
     handleAddDay,
     handleReorderDays,
+    handleDeleteDay,
     handleAddExercise,
     handleDeleteExercise,
     handleAddSet,
@@ -162,12 +165,12 @@ export default function Home() {
     setView("home");
   };
 
-  const handleStartDay = (dayId: string) => {
+  const handleStartDay = async (dayId: string) => {
     const day = workoutPlan?.days.find((d) => d.id === dayId);
 
     // Handle rest days differently
     if (day?.isRestDay) {
-      if (confirm("Mark this rest day as complete?")) {
+      if (await confirm("Mark this rest day as complete?")) {
         handleCompleteSession(dayId, "Rest day completed", 0);
       }
       return;
@@ -184,10 +187,10 @@ export default function Home() {
     setShowStartDialog(false);
   };
 
-  const handleBackToHome = () => {
+  const handleBackToHome = async () => {
     if (workoutStartTime) {
       if (
-        confirm(
+        await confirm(
           "End your workout session? Your progress will be lost unless you finish the workout."
         )
       ) {
@@ -200,9 +203,9 @@ export default function Home() {
     }
   };
 
-  const handleNewWorkout = () => {
+  const handleNewWorkout = async () => {
     if (
-      confirm(
+      await confirm(
         "Upload a new workout plan? You can always switch back to your existing plans later."
       )
     ) {
@@ -221,9 +224,9 @@ export default function Home() {
     }
   };
 
-  const handleResetSessionConfirm = (dayId?: string) => {
+  const handleResetSessionConfirm = async (dayId?: string) => {
     if (
-      confirm(
+      await confirm(
         "Are you sure you want to reset your current session? All progress will be lost."
       )
     ) {
@@ -231,14 +234,14 @@ export default function Home() {
     }
   };
 
-  const handleAddWorkoutDay = () => {
-    const dayName = prompt(
-      "Day name:",
-      "Day " + ((workoutPlan?.days.length ?? 0) + 1)
-    );
+  const handleAddWorkoutDay = async () => {
+    const dayName = await prompt("Day name:", {
+      defaultValue: "Day " + ((workoutPlan?.days.length ?? 0) + 1),
+      placeholder: "e.g., Day 1 - Push",
+    });
     if (!dayName || !dayName.trim()) return;
 
-    const isRestDay = confirm("Is this a rest day? (OK = Yes, Cancel = No)");
+    const isRestDay = await confirm("Is this a rest day?");
 
     handleAddDay({
       id: `day-${Date.now()}`,
@@ -339,6 +342,7 @@ export default function Home() {
               onNewWorkout={handleNewWorkout}
               onAddDay={handleAddWorkoutDay}
               onReorderDays={handleReorderDays}
+              onDeleteDay={handleDeleteDay}
             />
           </motion.div>
         ) : view === "progress" ? (

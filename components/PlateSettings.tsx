@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save } from 'lucide-react';
 import { PlateConfiguration, getPlateConfiguration, savePlateConfiguration, STANDARD_PLATES, BARBELL_WEIGHT } from '@/lib/plateCalculator';
+import { useDialog } from '@/components/DialogProvider';
 
 interface PlateSettingsProps {
   onClose: () => void;
 }
 
 export default function PlateSettings({ onClose }: PlateSettingsProps) {
+  const { alert, confirm } = useDialog();
   const [plates, setPlates] = useState<PlateConfiguration[]>([]);
   const [barbellWeight, setBarbellWeight] = useState(BARBELL_WEIGHT);
   const [newPlateWeight, setNewPlateWeight] = useState('');
@@ -47,7 +49,7 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
   const handleAddPlate = () => {
     const weight = parseFloat(newPlateWeight);
     if (isNaN(weight) || weight <= 0) {
-      alert('Please enter a valid weight');
+      void alert('Please enter a valid weight');
       return;
     }
     setPlates([...plates, { weight, available: 2 }]);
@@ -58,8 +60,8 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
     setPlates(plates.filter((_, i) => i !== index));
   };
 
-  const handleReset = () => {
-    if (confirm('Reset to default plate configuration?')) {
+  const handleReset = async () => {
+    if (await confirm('Reset to default plate configuration?')) {
       const defaultPlates = STANDARD_PLATES.map(w => ({ weight: w, available: 10 }));
       setPlates(defaultPlates);
       setBarbellWeight(BARBELL_WEIGHT);

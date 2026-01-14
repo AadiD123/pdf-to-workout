@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
+import { useDialog } from '@/components/DialogProvider';
 import { Check, X, Timer, Plus, RefreshCw, Calculator } from 'lucide-react';
 import { Exercise, SetRecord } from '@/types/workout';
 import { parseTimeToSeconds, formatSecondsToTime } from '@/lib/timeUtils';
@@ -111,6 +112,7 @@ export default function ExerciseCard({
   isRestTimerActive = false,
   onRestTimerActiveChange
 }: ExerciseCardProps) {
+  const { alert, confirm } = useDialog();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(exercise.name);
   const [shouldAutoStartTimer, setShouldAutoStartTimer] = useState(false);
@@ -193,7 +195,7 @@ export default function ExerciseCard({
       setAlternatives(data.alternatives);
     } catch (error) {
       console.error('Error getting alternatives:', error);
-      alert('Failed to get exercise alternatives. Please try again.');
+      void alert('Failed to get exercise alternatives. Please try again.');
       setShowSubstituteDialog(false);
     } finally {
       setIsLoadingAlternatives(false);
@@ -283,9 +285,11 @@ export default function ExerciseCard({
               {canDeleteExercise && onDeleteExercise && (
                 <button
                   onClick={() => {
-                    if (confirm(`Delete "${exercise.name}"?`)) {
-                      onDeleteExercise();
-                    }
+                    (async () => {
+                      if (await confirm(`Delete "${exercise.name}"?`)) {
+                        onDeleteExercise();
+                      }
+                    })();
                   }}
                   className="min-w-[44px] min-h-[44px] rounded-lg border border-transparent hover:border-red-500/40 hover:bg-red-500/10 text-red-400 transition-colors"
                   title="Delete exercise"
@@ -351,10 +355,12 @@ export default function ExerciseCard({
                     >
                       <button
                         onClick={() => {
-                          if (confirm('Delete this set?')) {
-                            onDeleteSet(setNumber);
-                            setSwipedSetNumber(null);
-                          }
+                          (async () => {
+                            if (await confirm('Delete this set?')) {
+                              onDeleteSet(setNumber);
+                              setSwipedSetNumber(null);
+                            }
+                          })();
                         }}
                         className="text-white font-semibold"
                       >

@@ -1,19 +1,24 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
-import { WorkoutPlan, SetRecord } from '@/types/workout';
-import ExerciseCard from './ExerciseCard';
-import RestTimer from './RestTimer';
-import { TrendingUp, MoreVertical, Sparkles } from 'lucide-react';
-import { format } from 'date-fns';
-import { AnimatePresence, motion } from 'framer-motion';
-import { triggerHaptic } from '@/lib/haptics';
+import { useState, useRef, useEffect } from "react";
+import { WorkoutPlan, SetRecord } from "@/types/workout";
+import ExerciseCard from "./ExerciseCard";
+import RestTimer from "./RestTimer";
+import { TrendingUp, MoreVertical, Sparkles } from "lucide-react";
+import { format } from "date-fns";
+import { AnimatePresence, motion } from "framer-motion";
+import { triggerHaptic } from "@/lib/haptics";
+import { useDialog } from "@/components/DialogProvider";
 
 interface WorkoutTrackerProps {
   workoutPlan: WorkoutPlan;
   selectedDayId: string;
   workoutStartTime?: number; // Timestamp when workout started
-  onUpdateSet: (exerciseId: string, setNumber: number, updates: Partial<SetRecord>) => void;
+  onUpdateSet: (
+    exerciseId: string,
+    setNumber: number,
+    updates: Partial<SetRecord>
+  ) => void;
   onUpdateNotes: (exerciseId: string, notes: string) => void;
   onUpdateExerciseName: (exerciseId: string, name: string) => void;
   onUpdateWorkoutName: (name: string) => void;
@@ -44,19 +49,23 @@ export default function WorkoutTracker({
   onAddExercise,
   onDeleteExercise,
   onAddSet,
-  onDeleteSet
+  onDeleteSet,
 }: WorkoutTrackerProps) {
-  const [sessionNotes, setSessionNotes] = useState('');
+  const { alert, confirm, prompt } = useDialog();
+  const [sessionNotes, setSessionNotes] = useState("");
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [selectedDayId] = useState(propSelectedDayId); // Fixed to the day selected from home
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [activeRestTimer, setActiveRestTimer] = useState<string | null>(null); // Track which exercise has active timer
   const [restTimerAutoStart, setRestTimerAutoStart] = useState(false);
-  const [restTimerDuration, setRestTimerDuration] = useState<string | undefined>(undefined);
+  const [restTimerDuration, setRestTimerDuration] = useState<
+    string | undefined
+  >(undefined);
 
-  const selectedDay = workoutPlan.days.find(d => d.id === selectedDayId) || workoutPlan.days[0];
-  
+  const selectedDay =
+    workoutPlan.days.find((d) => d.id === selectedDayId) || workoutPlan.days[0];
+
   // Update workout duration timer
   useEffect(() => {
     if (workoutStartTime) {
@@ -72,15 +81,19 @@ export default function WorkoutTracker({
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
     if (hours > 0) {
-      return `${hours}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      return `${hours}:${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
     }
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
-  const completedExercisesCount = selectedDay?.exercises.filter(ex => ex.completed).length || 0;
+  const completedExercisesCount =
+    selectedDay?.exercises.filter((ex) => ex.completed).length || 0;
   const totalExercises = selectedDay?.exercises.length || 0;
-  const overallProgress = totalExercises > 0 ? (completedExercisesCount / totalExercises) * 100 : 0;
+  const overallProgress =
+    totalExercises > 0 ? (completedExercisesCount / totalExercises) * 100 : 0;
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [levelUpMessage] = useState('Level Up!');
+  const [levelUpMessage] = useState("Level Up!");
   const prevCompletedRef = useRef(0);
 
   useEffect(() => {
@@ -93,16 +106,17 @@ export default function WorkoutTracker({
     }
   }, [completedExercisesCount]);
 
-
-  const handleDiscardWorkout = () => {
-    if (confirm('Discard this workout? All your progress will be lost.')) {
+  const handleDiscardWorkout = async () => {
+    if (
+      await confirm("Discard this workout? All your progress will be lost.")
+    ) {
       onBackToHome();
     }
   };
 
   const handleCompleteSession = () => {
     onCompleteSession(selectedDayId, sessionNotes);
-    setSessionNotes('');
+    setSessionNotes("");
     setShowCompleteDialog(false);
   };
 
@@ -110,27 +124,44 @@ export default function WorkoutTracker({
     onResetSession(selectedDayId);
   };
 
-  const handleAddExercise = () => {
+  const handleAddExercise = async () => {
     if (!onAddExercise) return;
-    
-    const exerciseName = prompt('Enter exercise name:');
+
+    const exerciseName = await prompt("Enter exercise name:", {
+      placeholder: "e.g., Bench Press",
+      title: "Add Exercise",
+    });
     if (!exerciseName || !exerciseName.trim()) return;
     triggerHaptic(10);
-    
-    const sets = prompt('Number of sets:', '3');
-    if (!sets || isNaN(parseInt(sets))) return;
-    
-    const type = confirm('Is this a time-based exercise? (OK = Yes, Cancel = No)') ? 'time' : 'reps';
-    
-    const reps = prompt(
-      type === 'time' ? 'Duration (e.g., "60 sec", "1 min"):' : 'Reps (e.g., "8-12", "10"):',
-      type === 'time' ? '60 sec' : '10'
+
+    const sets = await prompt("Number of sets:", { defaultValue: "3" });
+    if (!sets || isNaN(parseInt(sets))) {
+      void alert("Please enter a valid number of sets.");
+      return;
+    }
+
+    const type = (await confirm("Is this a time-based exercise?"))
+      ? "time"
+      : "reps";
+
+    const reps = await prompt(
+      type === "time"
+        ? 'Duration (e.g., "60 sec", "1 min"):'
+        : 'Reps (e.g., "8-12", "10"):',
+      { defaultValue: type === "time" ? "60 sec" : "10" }
     );
     if (!reps || !reps.trim()) return;
-    
-    const weight = type === 'reps' ? prompt('Weight (optional, e.g., "135 lbs"):') : undefined;
-    const restTime = prompt('Rest time (optional, e.g., "90 sec"):');
-    
+
+    const weight =
+      type === "reps"
+        ? await prompt('Weight (optional, e.g., "135 lbs"):', {
+            placeholder: "135 lbs",
+          })
+        : undefined;
+    const restTime = await prompt('Rest time (optional, e.g., "90 sec"):', {
+      placeholder: "90 sec",
+    });
+
     const newExercise = {
       id: `exercise-${Date.now()}`,
       name: exerciseName.trim(),
@@ -139,11 +170,11 @@ export default function WorkoutTracker({
       reps: reps.trim(),
       weight: weight?.trim() || undefined,
       restTime: restTime?.trim() || undefined,
-      notes: '',
+      notes: "",
       completed: false,
-      completedSets: []
+      completedSets: [],
     };
-    
+
     onAddExercise(selectedDayId, newExercise);
   };
 
@@ -179,7 +210,7 @@ export default function WorkoutTracker({
             {/* Rest Timer */}
             {activeRestTimer && (
               <div className="bg-[#1a1d24] px-3 py-1.5 rounded-full border border-[#2a2f3a]">
-                <RestTimer 
+                <RestTimer
                   defaultRestTime={restTimerDuration}
                   autoStart={restTimerAutoStart}
                   onAutoStartComplete={() => setRestTimerAutoStart(false)}
@@ -191,7 +222,7 @@ export default function WorkoutTracker({
             )}
           </div>
         )}
-        
+
         {/* Title and Menu Row */}
         <div className="flex items-center justify-between gap-4 px-4 pb-3">
           {/* Title - Can wrap */}
@@ -200,10 +231,10 @@ export default function WorkoutTracker({
               {workoutPlan.name}
             </h1>
             <p className="text-xs text-gray-500">
-              {format(new Date(workoutPlan.uploadedAt), 'MMM d, yyyy')}
+              {format(new Date(workoutPlan.uploadedAt), "MMM d, yyyy")}
             </p>
           </div>
-          
+
           {/* Menu */}
           <div className="relative flex-shrink-0">
             <button
@@ -268,13 +299,30 @@ export default function WorkoutTracker({
           <ExerciseCard
             key={exercise.id}
             exercise={exercise}
-            onUpdateSet={(setNumber, updates) => onUpdateSet(exercise.id, setNumber, updates)}
+            onUpdateSet={(setNumber, updates) =>
+              onUpdateSet(exercise.id, setNumber, updates)
+            }
             onUpdateNotes={(notes) => onUpdateNotes(exercise.id, notes)}
-            onUpdateExerciseName={(name) => onUpdateExerciseName(exercise.id, name)}
-            onAddSet={onAddSet ? () => onAddSet(selectedDayId, exercise.id) : undefined}
-            onDeleteSet={onDeleteSet ? (setNumber) => onDeleteSet(selectedDayId, exercise.id, setNumber) : undefined}
-            onDeleteExercise={onDeleteExercise ? () => onDeleteExercise(selectedDayId, exercise.id) : undefined}
-            canDeleteExercise={selectedDay ? selectedDay.exercises.length > 1 : false}
+            onUpdateExerciseName={(name) =>
+              onUpdateExerciseName(exercise.id, name)
+            }
+            onAddSet={
+              onAddSet ? () => onAddSet(selectedDayId, exercise.id) : undefined
+            }
+            onDeleteSet={
+              onDeleteSet
+                ? (setNumber) =>
+                    onDeleteSet(selectedDayId, exercise.id, setNumber)
+                : undefined
+            }
+            onDeleteExercise={
+              onDeleteExercise
+                ? () => onDeleteExercise(selectedDayId, exercise.id)
+                : undefined
+            }
+            canDeleteExercise={
+              selectedDay ? selectedDay.exercises.length > 1 : false
+            }
             isRestTimerActive={activeRestTimer === exercise.id}
             onRestTimerActiveChange={(isActive, restTime) => {
               if (isActive) {
@@ -316,8 +364,11 @@ export default function WorkoutTracker({
 
       {/* Complete Session Dialog - Mobile Bottom Sheet Style */}
       {showCompleteDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50" onClick={() => setShowCompleteDialog(false)}>
-          <div 
+        <div
+          className="fixed inset-0 bg-black/50 flex items-end sm:items-center justify-center z-50"
+          onClick={() => setShowCompleteDialog(false)}
+        >
+          <div
             className="bg-[#15151c] rounded-t-3xl sm:rounded-2xl p-6 max-w-md w-full border-t border-[#242432] sm:border animate-[slideUp_0.2s_ease-out]"
             onClick={(e) => e.stopPropagation()}
           >
@@ -326,7 +377,8 @@ export default function WorkoutTracker({
               Great Work! 💪
             </h2>
             <p className="text-gray-400 mb-4">
-              You completed {completedExercisesCount} of {totalExercises} exercises
+              You completed {completedExercisesCount} of {totalExercises}{" "}
+              exercises
             </p>
             <div className="space-y-4">
               <div>
@@ -359,4 +411,3 @@ export default function WorkoutTracker({
     </div>
   );
 }
-

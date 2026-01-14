@@ -4,6 +4,7 @@ import { WorkoutPlan } from '@/types/workout';
 import { ArrowLeft, Calendar, Dumbbell, Clock, ChevronDown, ChevronUp, Play, Timer, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { useState } from 'react';
+import { useDialog } from '@/components/DialogProvider';
 import { formatSecondsToDisplay } from '@/lib/timeUtils';
 
 interface ProgressViewProps {
@@ -23,6 +24,7 @@ export default function ProgressView({
   onDeletePlan,
   onNewWorkout,
 }: ProgressViewProps) {
+  const { confirm } = useDialog();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
 
@@ -144,12 +146,18 @@ export default function ProgressView({
                           Active
                         </div>
                       )}
-                      <button
-                        onClick={() => {
-                          if (confirm(`Delete "${plan.name}"? This will permanently remove all workout history.`)) {
-                            onDeletePlan(plan.id);
-                          }
-                        }}
+                        <button
+                          onClick={() => {
+                            (async () => {
+                              if (
+                                await confirm(
+                                  `Delete "${plan.name}"? This will permanently remove all workout history.`
+                                )
+                              ) {
+                                onDeletePlan(plan.id);
+                              }
+                            })();
+                          }}
                         className="min-w-[44px] min-h-[44px] rounded-lg hover:bg-red-500/10 text-red-400 transition-colors flex items-center justify-center"
                       >
                         <Trash2 className="w-4 h-4" />

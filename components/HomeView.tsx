@@ -11,8 +11,12 @@ import {
   Settings,
   MoreVertical,
   GripVertical,
+  Trash2,
+  Pencil,
+  Check,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useDialog } from "@/components/DialogProvider";
 import PlateSettings from "./PlateSettings";
 import { format, differenceInDays } from "date-fns";
 import {
@@ -28,6 +32,7 @@ interface HomeViewProps {
   onNewWorkout: () => void;
   onAddDay: () => void;
   onReorderDays: (dayOrder: string[]) => void;
+  onDeleteDay: (dayId: string) => void;
 }
 
 export default function HomeView({
@@ -37,11 +42,16 @@ export default function HomeView({
   onNewWorkout,
   onAddDay,
   onReorderDays,
+  onDeleteDay,
 }: HomeViewProps) {
+  const { confirm } = useDialog();
   const [showPlateSettings, setShowPlateSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [isEditingDays, setIsEditingDays] = useState(false);
   const [draggedDayId, setDraggedDayId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const dragMovedRef = useRef(false);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastWorkout =
     workoutPlan.sessions.length > 0
       ? workoutPlan.sessions[workoutPlan.sessions.length - 1]
@@ -58,6 +68,35 @@ export default function HomeView({
     : null;
 
   const currentStreak = calculateStreak(workoutPlan.sessions);
+
+  useEffect(() => {
+    if (!isDragging || !draggedDayId) return;
+    const handlePointerMove = (event: PointerEvent) => {
+      const element = document.elementFromPoint(event.clientX, event.clientY);
+      const card = element?.closest("[data-day-id]") as HTMLElement | null;
+      const targetId = card?.dataset.dayId;
+      if (!targetId || targetId === draggedDayId) return;
+      const ids = workoutPlan.days.map((day) => day.id);
+      const fromIndex = ids.indexOf(draggedDayId);
+      const toIndex = ids.indexOf(targetId);
+      if (fromIndex === -1 || toIndex === -1) return;
+      ids.splice(fromIndex, 1);
+      ids.splice(toIndex, 0, draggedDayId);
+      dragMovedRef.current = true;
+      onReorderDays(ids);
+    };
+    const handlePointerUp = () => {
+      setIsDragging(false);
+      setDraggedDayId(null);
+      dragMovedRef.current = false;
+    };
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", handlePointerUp);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", handlePointerUp);
+    };
+  }, [draggedDayId, isDragging, onReorderDays, workoutPlan.days]);
 
   return (
     <div className="min-h-screen bg-[#101014] text-gray-100 pb-8">
@@ -193,6 +232,23 @@ export default function HomeView({
           </h2>
           <div className="flex items-center gap-2">
             <button
+              onClick={() => setIsEditingDays((prev) => !prev)}
+              className="min-h-[40px] px-3 rounded-lg bg-[#15151c] border border-[#242432] text-gray-200 transition-colors flex items-center justify-center text-sm font-semibold hover:bg-[#1f232b]"
+              title={isEditingDays ? "Done" : "Edit days"}
+            >
+              {isEditingDays ? (
+                <>
+                  <Check className="w-4 h-4 mr-1" />
+                  Done
+                </>
+              ) : (
+                <>
+                  <Pencil className="w-4 h-4 mr-1" />
+                  Edit
+                </>
+              )}
+            </button>
+            <button
               onClick={onAddDay}
               className="min-h-[40px] px-3 rounded-lg bg-[#15151c] border border-[#242432] text-gray-200 transition-colors flex items-center justify-center text-sm font-semibold hover:bg-[#1f232b]"
               title="Add a workout day"
@@ -213,10 +269,11 @@ export default function HomeView({
             return (
               <div
                 key={day.id}
+                data-day-id={day.id}
                 role="button"
                 tabIndex={0}
                 onClick={() => {
-                  if (isDragging) return;
+                  if (isEditingDays || isDragging || dragMovedRef.current) return;
                   onStartDay(day.id);
                 }}
                 onKeyDown={(event) => {
@@ -224,32 +281,6 @@ export default function HomeView({
                     event.preventDefault();
                     onStartDay(day.id);
                   }
-                }}
-                draggable
-                onDragStart={(event) => {
-                  setDraggedDayId(day.id);
-                  setIsDragging(true);
-                  event.dataTransfer.effectAllowed = "move";
-                }}
-                onDragOver={(event) => {
-                  if (!draggedDayId || draggedDayId === day.id) return;
-                  event.preventDefault();
-                  event.dataTransfer.dropEffect = "move";
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (!draggedDayId || draggedDayId === day.id) return;
-                  const ids = workoutPlan.days.map((d) => d.id);
-                  const fromIndex = ids.indexOf(draggedDayId);
-                  const toIndex = ids.indexOf(day.id);
-                  if (fromIndex === -1 || toIndex === -1) return;
-                  ids.splice(fromIndex, 1);
-                  ids.splice(toIndex, 0, draggedDayId);
-                  onReorderDays(ids);
-                }}
-                onDragEnd={() => {
-                  setDraggedDayId(null);
-                  setIsDragging(false);
                 }}
                 className={`w-full rounded-[12px] p-4 border transition-all active:scale-[0.98] cursor-pointer ${
                   day.isRestDay
@@ -299,9 +330,62 @@ export default function HomeView({
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <div className="min-w-[28px] min-h-[28px] rounded-md border border-[#242432] text-gray-400 flex items-center justify-center">
-                      <GripVertical className="w-4 h-4" />
-                    </div>
+                    {isEditingDays && (
+                      <>
+                        <button
+                          onClick={() => {
+                            (async () => {
+                              if (
+                                await confirm(
+                                  `Delete "${day.name}"? This will remove all exercises for this day.`
+                                )
+                              ) {
+                                onDeleteDay(day.id);
+                              }
+                            })();
+                          }}
+                          className="min-w-[32px] min-h-[28px] rounded-md border border-[#2a2f3a] text-red-300 hover:bg-red-500/10 hover:border-red-500/40 flex items-center justify-center"
+                          title="Delete day"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                        <div
+                          onPointerDown={(event) => {
+                            if (event.pointerType === "mouse" && event.button !== 0) {
+                              return;
+                            }
+                            event.preventDefault();
+                            if (longPressTimerRef.current) {
+                              clearTimeout(longPressTimerRef.current);
+                            }
+                            longPressTimerRef.current = setTimeout(() => {
+                              setDraggedDayId(day.id);
+                              setIsDragging(true);
+                            }, 150);
+                          }}
+                          onPointerUp={() => {
+                            if (longPressTimerRef.current) {
+                              clearTimeout(longPressTimerRef.current);
+                              longPressTimerRef.current = null;
+                            }
+                          }}
+                          onPointerLeave={() => {
+                            if (longPressTimerRef.current) {
+                              clearTimeout(longPressTimerRef.current);
+                              longPressTimerRef.current = null;
+                            }
+                          }}
+                          className={`min-w-[28px] min-h-[28px] rounded-md border border-[#242432] text-gray-400 flex items-center justify-center touch-none ${
+                            isDragging && draggedDayId === day.id
+                              ? "cursor-grabbing"
+                              : "cursor-grab"
+                          }`}
+                          title="Drag to reorder"
+                        >
+                          <GripVertical className="w-4 h-4" />
+                        </div>
+                      </>
+                    )}
                     <ChevronRight className="w-6 h-6 text-gray-500" />
                   </div>
                 </div>
