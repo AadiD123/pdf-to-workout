@@ -136,7 +136,7 @@ export default function ExerciseCard({
 
   // Parse target reps - handle ranges like "8-12" or single values like "10"
   const getTargetReps = (): string => {
-    if (!exercise.reps) return '';
+    if (typeof exercise.reps !== 'string' || !exercise.reps) return '';
     // If it's a range, take the lower number as default
     const match = exercise.reps.match(/^(\d+)/);
     return match ? match[1] : exercise.reps;
@@ -144,7 +144,7 @@ export default function ExerciseCard({
 
   // Parse target duration for time-based exercises
   const getTargetDuration = (): number => {
-    if (!exercise.reps) return 0;
+    if (typeof exercise.reps !== 'string' || !exercise.reps) return 0;
     return parseTimeToSeconds(exercise.reps);
   };
 
