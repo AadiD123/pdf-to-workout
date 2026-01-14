@@ -31,13 +31,14 @@ type DialogState =
       placeholder?: string;
     };
 
+type DialogOptions =
+  | Partial<Extract<DialogState, { type: "alert" | "confirm" }>>
+  | Partial<Extract<DialogState, { type: "prompt" }>>;
+
 interface DialogApi {
-  alert: (message: string, options?: Partial<DialogState>) => Promise<void>;
-  confirm: (message: string, options?: Partial<DialogState>) => Promise<boolean>;
-  prompt: (
-    message: string,
-    options?: Partial<DialogState>
-  ) => Promise<string | null>;
+  alert: (message: string, options?: DialogOptions) => Promise<void>;
+  confirm: (message: string, options?: DialogOptions) => Promise<boolean>;
+  prompt: (message: string, options?: DialogOptions) => Promise<string | null>;
 }
 
 const DialogContext = createContext<DialogApi | null>(null);
@@ -84,9 +85,10 @@ export default function DialogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const prompt = useCallback<DialogApi["prompt"]>((message, options = {}) => {
+    const promptOptions = options as Extract<DialogState, { type: "prompt" }>;
     return new Promise<string | null>((resolve) => {
       resolverRef.current = resolve;
-      setPromptValue(options.defaultValue ?? "");
+      setPromptValue(promptOptions?.defaultValue ?? "");
       setDialog({
         type: "prompt",
         message,
