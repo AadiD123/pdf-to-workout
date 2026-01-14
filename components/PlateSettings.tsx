@@ -18,15 +18,23 @@ export default function PlateSettings({ onClose }: PlateSettingsProps) {
     setPlates(config);
     
     // Load barbell weight from localStorage
-    const stored = localStorage.getItem('barbell-weight');
-    if (stored) {
-      setBarbellWeight(parseFloat(stored));
+    try {
+      const stored = localStorage.getItem('barbell-weight');
+      if (stored) {
+        setBarbellWeight(parseFloat(stored));
+      }
+    } catch (error) {
+      console.warn('Failed to read barbell weight from localStorage:', error);
     }
   }, []);
 
   const handleSave = () => {
     savePlateConfiguration(plates);
-    localStorage.setItem('barbell-weight', barbellWeight.toString());
+    try {
+      localStorage.setItem('barbell-weight', barbellWeight.toString());
+    } catch (error) {
+      console.warn('Failed to save barbell weight to localStorage:', error);
+    }
     onClose();
   };
 

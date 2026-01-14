@@ -5,9 +5,34 @@ const CURRENT_SESSION_KEY = 'current-session';
 const ALL_WORKOUT_PLANS_KEY = 'all-workout-plans';
 const ACTIVE_PLAN_ID_KEY = 'active-plan-id';
 
+const safeGetItem = (key: string): string | null => {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn('localStorage getItem failed:', error);
+    return null;
+  }
+};
+
+const safeSetItem = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value);
+  } catch (error) {
+    console.warn('localStorage setItem failed:', error);
+  }
+};
+
+const safeRemoveItem = (key: string): void => {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.warn('localStorage removeItem failed:', error);
+  }
+};
+
 export function saveWorkoutPlan(plan: WorkoutPlan): void {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(WORKOUT_PLAN_KEY, JSON.stringify(plan));
+    safeSetItem(WORKOUT_PLAN_KEY, JSON.stringify(plan));
     
     // Also save to all plans list
     const allPlans = loadAllWorkoutPlans();
@@ -17,14 +42,14 @@ export function saveWorkoutPlan(plan: WorkoutPlan): void {
     } else {
       allPlans.push(plan);
     }
-    localStorage.setItem(ALL_WORKOUT_PLANS_KEY, JSON.stringify(allPlans));
-    localStorage.setItem(ACTIVE_PLAN_ID_KEY, plan.id);
+    safeSetItem(ALL_WORKOUT_PLANS_KEY, JSON.stringify(allPlans));
+    safeSetItem(ACTIVE_PLAN_ID_KEY, plan.id);
   }
 }
 
 export function loadWorkoutPlan(): WorkoutPlan | null {
   if (typeof window !== 'undefined') {
-    const data = localStorage.getItem(WORKOUT_PLAN_KEY);
+    const data = safeGetItem(WORKOUT_PLAN_KEY);
     if (data) {
       try {
         return JSON.parse(data) as WorkoutPlan;
@@ -39,8 +64,8 @@ export function loadWorkoutPlan(): WorkoutPlan | null {
 
 export function clearWorkoutPlan(): void {
   if (typeof window !== 'undefined') {
-    localStorage.removeItem(WORKOUT_PLAN_KEY);
-    localStorage.removeItem(CURRENT_SESSION_KEY);
+    safeRemoveItem(WORKOUT_PLAN_KEY);
+    safeRemoveItem(CURRENT_SESSION_KEY);
   }
 }
 
@@ -203,7 +228,7 @@ export function getAllExercises(plan: WorkoutPlan): Exercise[] {
 // Multiple workout plans management
 export function loadAllWorkoutPlans(): WorkoutPlan[] {
   if (typeof window !== 'undefined') {
-    const data = localStorage.getItem(ALL_WORKOUT_PLANS_KEY);
+    const data = safeGetItem(ALL_WORKOUT_PLANS_KEY);
     if (data) {
       try {
         return JSON.parse(data) as WorkoutPlan[];
@@ -221,15 +246,15 @@ export function switchToWorkoutPlan(planId: string): void {
     const allPlans = loadAllWorkoutPlans();
     const plan = allPlans.find(p => p.id === planId);
     if (plan) {
-      localStorage.setItem(WORKOUT_PLAN_KEY, JSON.stringify(plan));
-      localStorage.setItem(ACTIVE_PLAN_ID_KEY, planId);
+      safeSetItem(WORKOUT_PLAN_KEY, JSON.stringify(plan));
+      safeSetItem(ACTIVE_PLAN_ID_KEY, planId);
     }
   }
 }
 
 export function getActivePlanId(): string | null {
   if (typeof window !== 'undefined') {
-    return localStorage.getItem(ACTIVE_PLAN_ID_KEY);
+    return safeGetItem(ACTIVE_PLAN_ID_KEY);
   }
   return null;
 }
@@ -252,7 +277,7 @@ export function deleteWorkoutPlan(planId: string): void {
     }
     
     // Update the all plans list
-    localStorage.setItem(ALL_WORKOUT_PLANS_KEY, JSON.stringify(filteredPlans));
+    safeSetItem(ALL_WORKOUT_PLANS_KEY, JSON.stringify(filteredPlans));
   }
 }
 
