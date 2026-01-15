@@ -14,14 +14,14 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Workout Tracker - AI-Powered Fitness Companion",
+  title: "LiftLeap - AI-Powered Fitness Companion",
   description:
     "Transform your workout plans into interactive trackers with AI. Upload your workout images and track your progress with ease.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Workout Tracker",
+    title: "LiftLeap",
   },
 };
 

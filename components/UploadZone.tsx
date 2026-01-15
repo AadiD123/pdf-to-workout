@@ -1,65 +1,42 @@
-'use client';
+"use client";
 
-import { useState, useRef, DragEvent, ChangeEvent } from 'react';
-import { Upload, Image as ImageIcon, FileText, Type, Terminal, ScanLine, Plus } from 'lucide-react';
-import { triggerHaptic } from '@/lib/haptics';
-import { useDialog } from '@/components/DialogProvider';
+import { useState, useRef, DragEvent, ChangeEvent } from "react";
+import {
+  Upload,
+  Image as ImageIcon,
+  FileText,
+  Type,
+  Terminal,
+  ScanLine,
+  Sparkles,
+} from "lucide-react";
+import { useDialog } from "@/components/DialogProvider";
 
 interface UploadZoneProps {
   onUpload: (file: File) => void;
   onTextSubmit: (text: string) => void;
-  onManualCreate: (payload: ManualPlanPayload) => void;
+  onGeneratePlan: (prompt: string, daysPerWeek: number) => void;
   isLoading: boolean;
   error?: string;
 }
 
-export interface ManualExerciseInput {
-  id: string;
-  name: string;
-  sets: string;
-  type: 'reps' | 'time';
-  reps: string;
-  weight: string;
-  restTime: string;
-}
-
-export interface ManualDayInput {
-  id: string;
-  name: string;
-  isRestDay: boolean;
-  exercises: ManualExerciseInput[];
-}
-
-export interface ManualPlanPayload {
-  planName: string;
-  days: ManualDayInput[];
-}
-
-const createEmptyExercise = (): ManualExerciseInput => ({
-  id: `manual-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-  name: '',
-  sets: '3',
-  type: 'reps',
-  reps: '10',
-  weight: '',
-  restTime: ''
-});
-
-const createEmptyDay = (): ManualDayInput => ({
-  id: `day-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-  name: '',
-  isRestDay: false,
-  exercises: [createEmptyExercise()]
-});
-
-export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isLoading, error }: UploadZoneProps) {
+export default function UploadZone({
+  onUpload,
+  onTextSubmit,
+  onGeneratePlan,
+  isLoading,
+  error,
+}: UploadZoneProps) {
   const { alert } = useDialog();
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
-  const [inputMode, setInputMode] = useState<'file' | 'text' | 'manual'>('file');
-  const [textInput, setTextInput] = useState('');
-  const [manualPlanName, setManualPlanName] = useState('');
-  const [manualDays, setManualDays] = useState<ManualDayInput[]>([createEmptyDay()]);
+  const [inputMode, setInputMode] = useState<"file" | "text" | "generate">(
+    "file"
+  );
+  const [textInput, setTextInput] = useState("");
+  const [goalInput, setGoalInput] = useState("");
+  const [daysPerWeek, setDaysPerWeek] = useState("4");
+  const maxGoalChars = 200;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
@@ -91,9 +68,15 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
 
   const handleFile = (file: File) => {
     // Validate file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
+    const validTypes = [
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+    ];
     if (!validTypes.includes(file.type)) {
-      void alert('Please upload a valid file (JPG, PNG, WebP, or PDF)');
+      void alert("Please upload a valid file (JPG, PNG, WebP, or PDF)");
       return;
     }
 
@@ -102,10 +85,10 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
     reader.onload = (e) => {
       setPreview(e.target?.result as string);
     };
-    
+
     // For PDFs, we'll show a placeholder preview
-    if (file.type === 'application/pdf') {
-      setPreview('pdf'); // Special value to indicate PDF
+    if (file.type === "application/pdf") {
+      setPreview("pdf"); // Special value to indicate PDF
     } else {
       reader.readAsDataURL(file);
     }
@@ -115,7 +98,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
   };
 
   const handleClick = () => {
-    if (!isLoading && inputMode === 'file') {
+    if (!isLoading && inputMode === "file") {
       fileInputRef.current?.click();
     }
   };
@@ -126,72 +109,22 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
     }
   };
 
-  const handleManualDayChange = (id: string, updates: Partial<ManualDayInput>) => {
-    setManualDays((prev) =>
-      prev.map((day) => (day.id === id ? { ...day, ...updates } : day))
-    );
-  };
-
-  const handleManualExerciseChange = (
-    dayId: string,
-    exerciseId: string,
-    updates: Partial<ManualExerciseInput>
-  ) => {
-    setManualDays((prev) =>
-      prev.map((day) =>
-        day.id === dayId
-          ? {
-              ...day,
-              exercises: day.exercises.map((exercise) =>
-                exercise.id === exerciseId ? { ...exercise, ...updates } : exercise
-              )
-            }
-          : day
-      )
-    );
-  };
-
-  const handleAddManualDay = () => {
-    triggerHaptic(10);
-    setManualDays((prev) => [...prev, createEmptyDay()]);
-  };
-
-  const handleRemoveManualDay = (id: string) => {
-    setManualDays((prev) => prev.filter((day) => day.id !== id));
-  };
-
-  const handleAddManualExercise = (dayId: string) => {
-    triggerHaptic(10);
-    setManualDays((prev) =>
-      prev.map((day) =>
-        day.id === dayId
-          ? { ...day, exercises: [...day.exercises, createEmptyExercise()] }
-          : day
-      )
-    );
-  };
-
-  const handleRemoveManualExercise = (dayId: string, exerciseId: string) => {
-    setManualDays((prev) =>
-      prev.map((day) =>
-        day.id === dayId
-          ? {
-              ...day,
-              exercises: day.exercises.filter((exercise) => exercise.id !== exerciseId)
-            }
-          : day
-      )
-    );
-  };
-
-  const handleManualCreate = () => {
-    onManualCreate({
-      planName: manualPlanName.trim() || 'Custom Workout Plan',
-      days: manualDays
-    });
-
-    setManualPlanName('');
-    setManualDays([createEmptyDay()]);
+  const handleGenerateSubmit = () => {
+    const trimmed = goalInput.trim();
+    const days = parseInt(daysPerWeek, 10);
+    if (!trimmed) {
+      void alert("Describe your goal so I can build your plan.");
+      return;
+    }
+    if (trimmed.length > maxGoalChars) {
+      void alert(`Please keep your goal under ${maxGoalChars} characters.`);
+      return;
+    }
+    if (Number.isNaN(days) || days < 1 || days > 7) {
+      void alert("Choose a number of training days between 1 and 7.");
+      return;
+    }
+    onGeneratePlan(trimmed, days);
   };
 
   return (
@@ -200,52 +133,52 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6 bg-[#15151c] border border-[#242432] p-1.5 rounded-xl">
         <button
           onClick={() => {
-            setInputMode('file');
+            setInputMode("file");
             setPreview(null);
           }}
           disabled={isLoading}
           className={`w-full min-h-[44px] py-2.5 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 tracking-wide text-xs sm:text-sm leading-tight ${
-            inputMode === 'file'
-              ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]'
-              : 'text-gray-300 hover:bg-[#1a1d24]'
-          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            inputMode === "file"
+              ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]"
+              : "text-gray-300 hover:bg-[#1a1d24]"
+          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <Upload className="w-4 h-4" />
           <span className="text-center">Upload File</span>
         </button>
         <button
           onClick={() => {
-            setInputMode('text');
+            setInputMode("text");
             setPreview(null);
           }}
           disabled={isLoading}
           className={`w-full min-h-[44px] py-2.5 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 tracking-wide text-xs sm:text-sm leading-tight ${
-            inputMode === 'text'
-              ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]'
-              : 'text-gray-300 hover:bg-[#1a1d24]'
-          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            inputMode === "text"
+              ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]"
+              : "text-gray-300 hover:bg-[#1a1d24]"
+          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <Type className="w-4 h-4" />
           <span className="text-center">Paste Text</span>
         </button>
         <button
           onClick={() => {
-            setInputMode('manual');
+            setInputMode("generate");
             setPreview(null);
           }}
           disabled={isLoading}
           className={`w-full min-h-[44px] py-2.5 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 tracking-wide text-xs sm:text-sm leading-tight ${
-            inputMode === 'manual'
-              ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]'
-              : 'text-gray-300 hover:bg-[#1a1d24]'
-          } ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+            inputMode === "generate"
+              ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]"
+              : "text-gray-300 hover:bg-[#1a1d24]"
+          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          <Plus className="w-4 h-4" />
-          <span className="text-center">Build Manually</span>
+          <Sparkles className="w-4 h-4" />
+          <span className="text-center">Build Plan</span>
         </button>
       </div>
 
-      {inputMode === 'file' ? (
+      {inputMode === "file" ? (
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -254,11 +187,12 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
           className={`
             relative border-2 border-dashed rounded-2xl p-8 sm:p-12 text-center cursor-pointer
             transition-all duration-200 ease-in-out bg-[#0d0f14]
-            ${isDragging 
-              ? 'border-[#c6ff5e] bg-[#141820] scale-[1.02]' 
-              : 'border-[#2a2f3a] hover:border-[#c6ff5e] hover:bg-[#12151c]'
+            ${
+              isDragging
+                ? "border-[#c6ff5e] bg-[#141820] scale-[1.02]"
+                : "border-[#2a2f3a] hover:border-[#c6ff5e] hover:bg-[#12151c]"
             }
-            ${isLoading ? 'pointer-events-none opacity-50' : ''}
+            ${isLoading ? "pointer-events-none opacity-50" : ""}
           `}
         >
           <input
@@ -273,9 +207,9 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
           {preview && !isLoading ? (
             <div className="space-y-4">
               <div className="relative w-full max-h-48 overflow-hidden rounded-xl flex items-center justify-center">
-                {preview === 'pdf' ? (
+                {preview === "pdf" ? (
                   <div className="p-8 bg-[#161922] rounded-xl border border-[#242432]">
-                  <FileText className="w-16 h-16 text-[#c6ff5e]" />
+                    <FileText className="w-16 h-16 text-[#c6ff5e]" />
                   </div>
                 ) : (
                   <img
@@ -323,7 +257,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
             </div>
           )}
         </div>
-      ) : inputMode === 'text' ? (
+      ) : inputMode === "text" ? (
         <div className="bg-[#15151c] rounded-2xl p-6 border border-[#242432]">
           {isLoading ? (
             <div className="flex flex-col items-center gap-4 py-8">
@@ -342,7 +276,7 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
           ) : (
             <>
               <label className="block text-gray-200 font-semibold mb-3">
-                Paste your workout plan
+                Paste your LLM generated plan here :)
               </label>
               <textarea
                 value={textInput}
@@ -356,233 +290,82 @@ export default function UploadZone({ onUpload, onTextSubmit, onManualCreate, isL
                 disabled={!textInput.trim() || isLoading}
                 className="mt-4 w-full min-h-[48px] bg-[#c6ff5e] hover:bg-[#b6f54e] disabled:bg-[#3a3a48] disabled:text-gray-400 disabled:cursor-not-allowed text-black font-semibold py-3 px-8 rounded-xl transition-colors shadow-sm"
               >
-                Generate Workout Plan
+                Generate Plan
               </button>
             </>
           )}
         </div>
       ) : (
         <div className="bg-[#15151c] rounded-2xl p-6 border border-[#242432]">
-          <div className="space-y-5">
-            <div>
-              <label className="block text-gray-200 font-semibold mb-2">
-                Plan name
-              </label>
-              <input
-                value={manualPlanName}
-                onChange={(e) => setManualPlanName(e.target.value)}
-                placeholder="e.g., Strength Block"
-                className="w-full px-4 py-3 text-base border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                disabled={isLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-gray-200 font-semibold mb-2">
-                Days
-              </label>
-              <div className="space-y-4">
-                {manualDays.map((day, dayIndex) => (
-                  <div
-                    key={day.id}
-                    className="bg-[#0f1218] border border-[#2a2f3a] rounded-2xl p-4 space-y-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm text-gray-400 font-medium">
-                        Day {dayIndex + 1}
-                      </p>
-                      {manualDays.length > 1 && (
-                        <button
-                          onClick={() => handleRemoveManualDay(day.id)}
-                          className="text-xs text-red-300 hover:text-red-200"
-                          disabled={isLoading}
-                        >
-                          Remove Day
-                        </button>
-                      )}
-                    </div>
-                    <input
-                      value={day.name}
-                      onChange={(e) =>
-                        handleManualDayChange(day.id, { name: e.target.value })
-                      }
-                      placeholder="e.g., Day 1 - Push"
-                      className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                      disabled={isLoading}
-                    />
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleManualDayChange(day.id, {
-                            isRestDay: !day.isRestDay
-                          })
-                        }
-                        className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors border ${
-                          day.isRestDay
-                            ? 'bg-[#1f232b] text-[#c6ff5e] border-[#2f3340]'
-                            : 'text-gray-300 border-[#2a2f3a] hover:bg-[#141821]'
-                        }`}
-                        disabled={isLoading}
-                      >
-                        {day.isRestDay ? 'Rest Day' : 'Training Day'}
-                      </button>
-                    </div>
-
-                    {!day.isRestDay && (
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-gray-200 font-semibold">
-                            Exercises
-                          </h3>
-                          <button
-                            onClick={() => handleAddManualExercise(day.id)}
-                            className="text-sm text-[#c6ff5e] hover:text-[#8ff5ff] font-semibold"
-                            disabled={isLoading}
-                          >
-                            + Add Exercise
-                          </button>
-                        </div>
-                        {day.exercises.map((exercise, index) => (
-                          <div
-                            key={exercise.id}
-                            className="bg-[#0b0e14] border border-[#2a2f3a] rounded-xl p-4 space-y-3"
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm text-gray-400 font-medium">
-                                Exercise {index + 1}
-                              </p>
-                              {day.exercises.length > 1 && (
-                                <button
-                                  onClick={() =>
-                                    handleRemoveManualExercise(day.id, exercise.id)
-                                  }
-                                  className="text-xs text-red-300 hover:text-red-200"
-                                  disabled={isLoading}
-                                >
-                                  Remove
-                                </button>
-                              )}
-                            </div>
-                            <input
-                              value={exercise.name}
-                              onChange={(e) =>
-                                handleManualExerciseChange(day.id, exercise.id, {
-                                  name: e.target.value
-                                })
-                              }
-                              placeholder="Exercise name"
-                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                              disabled={isLoading}
-                            />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <input
-                                value={exercise.sets}
-                                onChange={(e) =>
-                                  handleManualExerciseChange(day.id, exercise.id, {
-                                    sets: e.target.value
-                                  })
-                                }
-                                placeholder="Sets"
-                                className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                                disabled={isLoading}
-                              />
-                              <div className="grid grid-cols-2 gap-1 rounded-lg border border-[#2a2f3a] bg-[#0b0e14] p-1">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleManualExerciseChange(day.id, exercise.id, {
-                                      type: 'reps'
-                                    })
-                                  }
-                                  className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors ${
-                                    exercise.type === 'reps'
-                                      ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340]'
-                                      : 'text-gray-300 hover:bg-[#141821]'
-                                  }`}
-                                  disabled={isLoading}
-                                >
-                                  Reps-based
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleManualExerciseChange(day.id, exercise.id, {
-                                      type: 'time'
-                                    })
-                                  }
-                                  className={`px-3 py-2 text-xs font-semibold rounded-md transition-colors ${
-                                    exercise.type === 'time'
-                                      ? 'bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340]'
-                                      : 'text-gray-300 hover:bg-[#141821]'
-                                  }`}
-                                  disabled={isLoading}
-                                >
-                                  Time-based
-                                </button>
-                              </div>
-                            </div>
-                            <input
-                              value={exercise.reps}
-                              onChange={(e) =>
-                                handleManualExerciseChange(day.id, exercise.id, {
-                                  reps: e.target.value
-                                })
-                              }
-                              placeholder={
-                                exercise.type === 'time'
-                                  ? 'Duration (e.g., 60 sec)'
-                                  : 'Reps (e.g., 8-12)'
-                              }
-                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                              disabled={isLoading}
-                            />
-                            {exercise.type === 'reps' && (
-                              <input
-                                value={exercise.weight}
-                                onChange={(e) =>
-                                  handleManualExerciseChange(day.id, exercise.id, {
-                                    weight: e.target.value
-                                  })
-                                }
-                                placeholder="Weight (optional)"
-                                className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                                disabled={isLoading}
-                              />
-                            )}
-                            <input
-                              value={exercise.restTime}
-                              onChange={(e) =>
-                                handleManualExerciseChange(day.id, exercise.id, {
-                                  restTime: e.target.value
-                                })
-                              }
-                              placeholder="Rest time (optional)"
-                              className="w-full px-3 py-2 text-sm border border-[#2a2f3a] rounded-lg bg-[#0b0e14] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
-                              disabled={isLoading}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={handleAddManualDay}
-                  className="text-sm text-[#c6ff5e] hover:text-[#b6f54e] font-semibold"
-                  disabled={isLoading}
-                >
-                  + Add Day
-                </button>
+          {isLoading ? (
+            <div className="flex flex-col items-center gap-4 py-8">
+              <div className="flex items-center justify-center w-16 h-16 rounded-full border border-[#2a2f3a] bg-[#151820]">
+                <ScanLine className="w-8 h-8 text-[#c6ff5e] scan-pulse" />
+              </div>
+              <div>
+                <p className="text-xl font-semibold text-gray-100 font-mono">
+                  Building Plan...
+                </p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Creating your weekly split (5–10s)
+                </p>
               </div>
             </div>
-            <button
-              onClick={handleManualCreate}
-              disabled={isLoading}
-              className="w-full min-h-[48px] bg-[#c6ff5e] hover:bg-[#b6f54e] disabled:bg-[#3a3a48] disabled:text-gray-400 disabled:cursor-not-allowed text-black font-semibold py-3 px-8 rounded-xl transition-colors shadow-sm"
-            >
-              Create Workout Plan
-            </button>
-          </div>
+          ) : (
+            <div className="space-y-4">
+              <label className="block text-gray-200 font-semibold">
+                Describe your goal
+              </label>
+              <textarea
+                value={goalInput}
+                onChange={(e) => setGoalInput(e.target.value)}
+                placeholder="Example: I want to gain muscle, 45 minutes per session, prefer compound lifts."
+                className="w-full h-40 p-4 border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 resize-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent transition-all"
+                maxLength={maxGoalChars}
+                disabled={isLoading}
+              />
+              <div className="flex items-center justify-between text-xs text-gray-500">
+                <span>
+                  {goalInput.length}/{maxGoalChars} characters
+                </span>
+                <span>Keep it concise for best results</span>
+              </div>
+              <div>
+                <label className="block text-gray-200 font-semibold mb-2">
+                  Training days per week
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={7}
+                  value={daysPerWeek}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "") {
+                      setDaysPerWeek("");
+                      return;
+                    }
+                    const numeric = parseInt(value, 10);
+                    if (Number.isNaN(numeric)) {
+                      setDaysPerWeek("");
+                      return;
+                    }
+                    const clamped = Math.min(7, Math.max(1, numeric));
+                    setDaysPerWeek(String(clamped));
+                  }}
+                  className="w-full px-4 py-3 text-base border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                  disabled={isLoading}
+                />
+              </div>
+              <button
+                onClick={handleGenerateSubmit}
+                disabled={!goalInput.trim() || isLoading}
+                className="w-full min-h-[48px] bg-[#c6ff5e] hover:bg-[#b6f54e] disabled:bg-[#3a3a48] disabled:text-gray-400 disabled:cursor-not-allowed text-black font-semibold py-3 px-8 rounded-xl transition-colors shadow-sm"
+              >
+                Generate Weekly Plan
+              </button>
+            </div>
+          )}
         </div>
       )}
 

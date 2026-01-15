@@ -35,23 +35,25 @@ export default function RestTimer({
 
     const str = restTimeStr.toLowerCase().trim();
 
-    // Match "90 sec", "90s", "90 seconds"
+    // Always prefer plain numeric seconds
+    const numeric = Number(str);
+    if (!Number.isNaN(numeric) && Number.isFinite(numeric)) {
+      return Math.max(0, Math.floor(numeric));
+    }
+
+    // Legacy formats support
     const secMatch = str.match(/(\d+)\s*(?:sec|s|second)/);
     if (secMatch) return parseInt(secMatch[1]);
 
-    // Match "2 min", "2m", "2 minutes"
     const minMatch = str.match(/(\d+)\s*(?:min|m|minute)/);
     if (minMatch) return parseInt(minMatch[1]) * 60;
 
-    // Match "1:30" format
     const timeMatch = str.match(/(\d+):(\d+)/);
     if (timeMatch) {
       return parseInt(timeMatch[1]) * 60 + parseInt(timeMatch[2]);
     }
 
-    // Try to parse as plain number (assume seconds)
-    const num = parseInt(str);
-    return isNaN(num) ? 90 : num;
+    return 90;
   };
 
   // Initialize timer with default rest time
@@ -66,8 +68,12 @@ export default function RestTimer({
   // Auto-start timer when triggered
   useEffect(() => {
     if (autoStart) {
+      const nextTarget = defaultRestTime
+        ? parseRestTime(defaultRestTime)
+        : targetTime;
       setIsOpen(true);
-      setTimeLeft(targetTime);
+      setTargetTime(nextTarget);
+      setTimeLeft(nextTarget);
       setIsRunning(true);
 
       // Call callback to reset the autoStart trigger
@@ -75,7 +81,7 @@ export default function RestTimer({
         onAutoStartComplete();
       }
     }
-  }, [autoStart, targetTime, onAutoStartComplete]);
+  }, [autoStart, defaultRestTime, targetTime, onAutoStartComplete]);
 
   // Keep inline timers always open
   useEffect(() => {
@@ -171,11 +177,9 @@ export default function RestTimer({
   };
 
   const adjustTime = (seconds: number) => {
-    const newTime = Math.max(0, targetTime + seconds);
+    const newTime = Math.max(0, timeLeft + seconds);
+    setTimeLeft(newTime);
     setTargetTime(newTime);
-    if (!isRunning) {
-      setTimeLeft(newTime);
-    }
   };
 
   const formatTime = (seconds: number): string => {
@@ -191,6 +195,12 @@ export default function RestTimer({
   if (minimal && inline && isOpen) {
     return (
       <div className="flex items-center gap-2">
+        <button
+          onClick={() => adjustTime(-15)}
+          className="p-1 rounded bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200"
+        >
+          <Minus className="w-3 h-3" />
+        </button>
         <span className={`text-lg font-bold ${
           timeLeft === 0
             ? "text-[#c6ff5e]"
@@ -200,6 +210,12 @@ export default function RestTimer({
         }`}>
           {formatTime(timeLeft)}
         </span>
+        <button
+          onClick={() => adjustTime(15)}
+          className="p-1 rounded bg-[#1f232b] hover:bg-[#2a2f3a] text-gray-200"
+        >
+          <Plus className="w-3 h-3" />
+        </button>
         {!isRunning && (
           <button
             onClick={handleStartPause}

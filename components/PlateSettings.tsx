@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Trash2, Save } from 'lucide-react';
-import { PlateConfiguration, getPlateConfiguration, savePlateConfiguration, STANDARD_PLATES, BARBELL_WEIGHT } from '@/lib/plateCalculator';
+import { PlateConfiguration, STANDARD_PLATES, BARBELL_WEIGHT } from '@/lib/plateCalculator';
 import { useDialog } from '@/components/DialogProvider';
+import { useUserSettings } from '@/components/UserSettingsProvider';
 
 interface PlateSettingsProps {
   onClose: () => void;
@@ -11,32 +12,21 @@ interface PlateSettingsProps {
 
 export default function PlateSettings({ onClose }: PlateSettingsProps) {
   const { alert, confirm } = useDialog();
+  const { settings, updateSettings } = useUserSettings();
   const [plates, setPlates] = useState<PlateConfiguration[]>([]);
   const [barbellWeight, setBarbellWeight] = useState(BARBELL_WEIGHT);
   const [newPlateWeight, setNewPlateWeight] = useState('');
 
   useEffect(() => {
-    const config = getPlateConfiguration();
-    setPlates(config);
-    
-    // Load barbell weight from localStorage
-    try {
-    const stored = localStorage.getItem('barbell-weight');
-    if (stored) {
-      setBarbellWeight(parseFloat(stored));
-      }
-    } catch (error) {
-      console.warn('Failed to read barbell weight from localStorage:', error);
-    }
-  }, []);
+    setPlates(settings.plateConfiguration);
+    setBarbellWeight(settings.barbellWeight);
+  }, [settings.barbellWeight, settings.plateConfiguration]);
 
-  const handleSave = () => {
-    savePlateConfiguration(plates);
-    try {
-    localStorage.setItem('barbell-weight', barbellWeight.toString());
-    } catch (error) {
-      console.warn('Failed to save barbell weight to localStorage:', error);
-    }
+  const handleSave = async () => {
+    await updateSettings({
+      plateConfiguration: plates,
+      barbellWeight,
+    });
     onClose();
   };
 

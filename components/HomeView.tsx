@@ -46,7 +46,7 @@ export default function HomeView({
   onDeleteDay,
   onDeleteAllData,
 }: HomeViewProps) {
-  const { confirm } = useDialog();
+  const { confirm, alert } = useDialog();
   const [showPlateSettings, setShowPlateSettings] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [isEditingDays, setIsEditingDays] = useState(false);
@@ -54,6 +54,8 @@ export default function HomeView({
   const [newDayName, setNewDayName] = useState("");
   const [newDayIsRest, setNewDayIsRest] = useState(false);
   const [dayFormError, setDayFormError] = useState("");
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
   const [draggedDayId, setDraggedDayId] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const dragMovedRef = useRef(false);
@@ -104,6 +106,14 @@ export default function HomeView({
     };
   }, [draggedDayId, isDragging, onReorderDays, workoutPlan.days]);
 
+  useEffect(() => {
+    const standalone = window.matchMedia("(display-mode: standalone)").matches;
+    setIsStandalone(standalone);
+    const ios =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(ios);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#101014] text-gray-100 pb-8">
       {/* Header */}
@@ -128,6 +138,23 @@ export default function HomeView({
             </button>
             {showMenu && (
               <div className="absolute right-0 mt-2 w-56 bg-[#15151c] rounded-lg shadow-lg border border-[#242432] py-1 z-20">
+                <button
+                  onClick={() => {
+                    const message = isStandalone
+                      ? "This app is already installed on your device."
+                      : isIOS
+                        ? 'To install: open Safari, tap Share, then "Add to Home Screen".'
+                        : 'Open your browser menu and choose "Install app" or "Add to Home screen".';
+                    void alert(message, {
+                      title: "Install this app",
+                      confirmLabel: "Got it",
+                    });
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#1f232b] flex items-center gap-2"
+                >
+                  Install App
+                </button>
                 <button
                   onClick={() => {
                     setShowPlateSettings(true);

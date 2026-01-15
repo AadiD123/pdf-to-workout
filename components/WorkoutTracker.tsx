@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { WorkoutPlan, SetRecord } from "@/types/workout";
+import { WorkoutPlan, SetRecord, Exercise } from "@/types/workout";
 import ExerciseCard from "./ExerciseCard";
 import RestTimer from "./RestTimer";
-import { TrendingUp, MoreVertical, Sparkles } from "lucide-react";
+import { TrendingUp, MoreVertical, Sparkles, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { AnimatePresence, motion } from "framer-motion";
 import { triggerHaptic } from "@/lib/haptics";
-import { useDialog } from "@/components/DialogProvider";
+import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 
 interface WorkoutTrackerProps {
   workoutPlan: WorkoutPlan;
@@ -21,11 +21,13 @@ interface WorkoutTrackerProps {
   ) => void;
   onUpdateNotes: (exerciseId: string, notes: string) => void;
   onUpdateExerciseName: (exerciseId: string, name: string) => void;
+  onUpdateExercise: (exerciseId: string, updates: Partial<Exercise>) => void;
   onUpdateWorkoutName: (name: string) => void;
   onUpdateDayName: (dayId: string, name: string) => void;
   onCompleteSession: (dayId: string, notes?: string) => void;
   onResetSession: (dayId?: string) => void;
   onBackToHome: () => void;
+  onDiscardWorkout: () => void;
   onViewProgress: () => void;
   onAddExercise?: (dayId: string, exercise: any) => void;
   onDeleteExercise?: (dayId: string, exerciseId: string) => void;
@@ -40,18 +42,21 @@ export default function WorkoutTracker({
   onUpdateSet,
   onUpdateNotes,
   onUpdateExerciseName,
+  onUpdateExercise,
   onUpdateWorkoutName,
   onUpdateDayName,
   onCompleteSession,
   onResetSession,
   onBackToHome,
+  onDiscardWorkout,
   onViewProgress,
   onAddExercise,
   onDeleteExercise,
   onAddSet,
   onDeleteSet,
 }: WorkoutTrackerProps) {
-  const { confirm } = useDialog();
+  const { exerciseNames, addCustomExercise, isCatalogExercise } =
+    useExerciseCatalog();
   const [sessionNotes, setSessionNotes] = useState("");
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -65,6 +70,7 @@ export default function WorkoutTracker({
   const [newExerciseWeight, setNewExerciseWeight] = useState("");
   const [newExerciseRestTime, setNewExerciseRestTime] = useState("");
   const [addExerciseError, setAddExerciseError] = useState("");
+  const [saveCustomExercise, setSaveCustomExercise] = useState(false);
   const [selectedDayId] = useState(propSelectedDayId); // Fixed to the day selected from home
   const [workoutDuration, setWorkoutDuration] = useState(0);
   const [activeRestTimer, setActiveRestTimer] = useState<string | null>(null); // Track which exercise has active timer
@@ -117,11 +123,7 @@ export default function WorkoutTracker({
   }, [completedExercisesCount]);
 
   const handleDiscardWorkout = async () => {
-    if (
-      await confirm("Discard this workout? All your progress will be lost.")
-    ) {
-      onBackToHome();
-    }
+    await onDiscardWorkout();
   };
 
   const handleCompleteSession = () => {
@@ -143,6 +145,7 @@ export default function WorkoutTracker({
     setNewExerciseWeight("");
     setNewExerciseRestTime("");
     setAddExerciseError("");
+    setSaveCustomExercise(false);
     setShowAddExerciseDialog(true);
     triggerHaptic(10);
   };
@@ -184,6 +187,9 @@ export default function WorkoutTracker({
     };
 
     onAddExercise(selectedDayId, newExercise);
+    if (saveCustomExercise && !isCatalogExercise(newExercise.name)) {
+      void addCustomExercise(newExercise.name);
+    }
     setShowAddExerciseDialog(false);
   };
 
@@ -235,13 +241,22 @@ export default function WorkoutTracker({
         {/* Title and Menu Row */}
         <div className="flex items-center justify-between gap-4 px-4 pb-3">
           {/* Title - Can wrap */}
-          <div className="flex-1 min-w-0">
-            <h1 className="text-lg font-extrabold uppercase tracking-tight text-gray-100 line-clamp-2">
-              {workoutPlan.name}
-            </h1>
-            <p className="text-xs text-gray-500">
-              {format(new Date(workoutPlan.uploadedAt), "MMM d, yyyy")}
-            </p>
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <button
+              onClick={onBackToHome}
+              className="min-w-[40px] min-h-[40px] rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] flex items-center justify-center"
+              title="Minimize workout"
+            >
+              <ChevronDown className="w-5 h-5 text-gray-300" />
+            </button>
+            <div>
+              <h1 className="text-lg font-extrabold uppercase tracking-tight text-gray-100 line-clamp-2">
+                {workoutPlan.name}
+              </h1>
+              <p className="text-xs text-gray-500">
+                {format(new Date(workoutPlan.uploadedAt), "MMM d, yyyy")}
+              </p>
+            </div>
           </div>
 
           {/* Menu */}
@@ -315,6 +330,9 @@ export default function WorkoutTracker({
             onUpdateExerciseName={(name) =>
               onUpdateExerciseName(exercise.id, name)
             }
+            onUpdateExercise={(updates) =>
+              onUpdateExercise(exercise.id, updates)
+            }
             onAddSet={
               onAddSet ? () => onAddSet(selectedDayId, exercise.id) : undefined
             }
@@ -336,7 +354,7 @@ export default function WorkoutTracker({
             onRestTimerActiveChange={(isActive, restTime) => {
               if (isActive) {
                 setActiveRestTimer(exercise.id);
-                setRestTimerDuration(restTime);
+                setRestTimerDuration(restTime ?? "90");
                 setRestTimerAutoStart(true);
               } else {
                 setActiveRestTimer(null);
@@ -436,6 +454,7 @@ export default function WorkoutTracker({
                 <input
                   value={newExerciseName}
                   onChange={(event) => setNewExerciseName(event.target.value)}
+                  list="exercise-catalog-options"
                   className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] px-4 py-3 text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
                   placeholder="e.g., Bench Press"
                 />
@@ -524,6 +543,20 @@ export default function WorkoutTracker({
               {addExerciseError && (
                 <p className="text-sm text-red-300">{addExerciseError}</p>
               )}
+              {!isCatalogExercise(newExerciseName) &&
+                newExerciseName.trim() && (
+                  <label className="flex items-center gap-2 text-sm text-gray-300">
+                    <input
+                      type="checkbox"
+                      checked={saveCustomExercise}
+                      onChange={(event) =>
+                        setSaveCustomExercise(event.target.checked)
+                      }
+                      className="h-4 w-4 rounded border-[#2a2f3a] bg-[#0f1218] text-[#c6ff5e] focus:ring-[#c6ff5e]"
+                    />
+                    Save to my exercises
+                  </label>
+                )}
               <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   onClick={() => setShowAddExerciseDialog(false)}
@@ -539,6 +572,11 @@ export default function WorkoutTracker({
                 </button>
               </div>
             </div>
+            <datalist id="exercise-catalog-options">
+              {exerciseNames.map((exercise) => (
+                <option key={exercise} value={exercise} />
+              ))}
+            </datalist>
           </div>
         </div>
       )}

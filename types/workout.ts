@@ -4,6 +4,7 @@ export interface SetRecord {
   duration?: number; // For time-based exercises (in seconds)
   weight?: number;
   completed: boolean;
+  setType?: 'warmup' | 'normal' | 'failure' | 'drop';
 }
 
 export interface Exercise {
@@ -14,6 +15,7 @@ export interface Exercise {
   reps: string; // "8-12" or "10" etc for rep-based, "60 sec" or "1 min" for time-based
   weight?: string;
   restTime?: string;
+  targetNotes?: string;
   notes?: string;
   completed: boolean;
   completedSets: SetRecord[];

@@ -3,7 +3,7 @@
 import { WorkoutPlan } from '@/types/workout';
 import { ArrowLeft, Calendar, Dumbbell, Clock, ChevronDown, ChevronUp, Play, Timer, Trash2 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDialog } from '@/components/DialogProvider';
 import { formatSecondsToDisplay } from '@/lib/timeUtils';
 
@@ -14,6 +14,7 @@ interface ProgressViewProps {
   onSwitchPlan: (planId: string) => void;
   onDeletePlan: (planId: string) => void;
   onNewWorkout: () => void;
+  onUpdateWorkoutName: (name: string) => void;
 }
 
 export default function ProgressView({
@@ -23,10 +24,13 @@ export default function ProgressView({
   onSwitchPlan,
   onDeletePlan,
   onNewWorkout,
+  onUpdateWorkoutName,
 }: ProgressViewProps) {
   const { confirm } = useDialog();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
+  const [isEditingPlanName, setIsEditingPlanName] = useState(false);
+  const [planNameDraft, setPlanNameDraft] = useState(workoutPlan.name);
 
   const sessions = workoutPlan.sessions;
   
@@ -59,6 +63,11 @@ export default function ProgressView({
     setExpandedSessionId(expandedSessionId === sessionId ? null : sessionId);
   };
 
+  useEffect(() => {
+    setPlanNameDraft(workoutPlan.name);
+    setIsEditingPlanName(false);
+  }, [workoutPlan.id, workoutPlan.name]);
+
   return (
     <div className="min-h-screen bg-[#101014] text-gray-100 pb-8">
       {/* Fixed Header */}
@@ -86,20 +95,64 @@ export default function ProgressView({
               {sessions.length}
             </p>
           </div>
-          <button
-            onClick={onNewWorkout}
-            className="w-full sm:w-auto min-h-[48px] px-6 bg-[#c6ff5e] hover:bg-[#b6f54e] text-black rounded-lg font-semibold transition-colors"
-          >
-            Add New Workout Plan
-          </button>
+          <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <button
+              onClick={onNewWorkout}
+              className="w-full sm:w-auto min-h-[48px] px-6 bg-[#c6ff5e] hover:bg-[#b6f54e] text-black rounded-lg font-semibold transition-colors"
+            >
+              Add New Workout Plan
+            </button>
+          </div>
         </div>
 
         {/* Current Plan Info */}
         <div className="bg-[#15151c] border border-[#242432] rounded-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-gray-100">
-              {workoutPlan.name}
-            </h2>
+          <div className="flex items-center justify-between gap-3 mb-2">
+            {isEditingPlanName ? (
+              <div className="flex-1">
+                <input
+                  value={planNameDraft}
+                  onChange={(event) => setPlanNameDraft(event.target.value)}
+                  className="w-full px-3 py-2 text-base border border-[#2a2f3a] rounded-lg bg-[#0f1218] text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e]"
+                  placeholder="Plan name"
+                />
+              </div>
+            ) : (
+              <h2 className="text-lg font-semibold text-gray-100">
+                {workoutPlan.name}
+              </h2>
+            )}
+            {isEditingPlanName ? (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setPlanNameDraft(workoutPlan.name);
+                    setIsEditingPlanName(false);
+                  }}
+                  className="min-h-[36px] px-3 rounded-lg border border-[#2a2f3a] text-xs text-gray-300 hover:bg-[#1f232b] transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const nextName = planNameDraft.trim();
+                    if (!nextName) return;
+                    onUpdateWorkoutName(nextName);
+                    setIsEditingPlanName(false);
+                  }}
+                  className="min-h-[36px] px-3 rounded-lg bg-[#c6ff5e] text-black text-xs font-semibold hover:bg-[#b6f54e] transition-colors"
+                >
+                  Save
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsEditingPlanName(true)}
+                className="min-h-[36px] px-3 rounded-lg border border-[#2a2f3a] text-xs text-gray-300 hover:bg-[#1f232b] transition-colors"
+              >
+                Edit name
+              </button>
+            )}
           </div>
           <p className="text-sm text-gray-500">
             Uploaded {format(new Date(workoutPlan.uploadedAt), 'MMM d, yyyy')}

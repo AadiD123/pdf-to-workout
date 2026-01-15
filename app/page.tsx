@@ -1,19 +1,27 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useWorkout } from "@/hooks/useWorkout";
 import { useDialog } from "@/components/DialogProvider";
-import UploadZone, { ManualPlanPayload } from "@/components/UploadZone";
+import { useAuth } from "@/components/AuthProvider";
+import UploadZone from "@/components/UploadZone";
 import WorkoutTracker from "@/components/WorkoutTracker";
 import ProgressView from "@/components/ProgressView";
 import HomeView from "@/components/HomeView";
 import InstallPrompt from "@/components/InstallPrompt";
 import { pdfToImage } from "@/lib/pdfToImage";
-import { Dumbbell, ArrowLeft } from "lucide-react";
+import { Dumbbell, ArrowLeft, Download } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
+import { WorkoutPlan } from "@/types/workout";
 
 export default function Home() {
-  const { confirm } = useDialog();
+  const { confirm, alert, prompt } = useDialog();
+  const {
+    user,
+    isLoading: authLoading,
+    signInWithEmailOtp,
+    getAccessToken,
+  } = useAuth();
   const {
     workoutPlan,
     allWorkoutPlans,
@@ -22,9 +30,11 @@ export default function Home() {
     handleUpdateSet,
     handleUpdateNotes,
     handleUpdateExerciseName,
+    handleUpdateExercise,
     handleUpdateWorkoutName,
     handleUpdateDayName,
     handleCompleteSession,
+    handleReplaceWorkoutPlan,
     handleResetSession,
     handleClearWorkout,
     handleSwitchPlan,
@@ -48,8 +58,86 @@ export default function Home() {
   );
   const [showStartDialog, setShowStartDialog] = useState(false);
   const [pendingDayId, setPendingDayId] = useState<string>("");
+  const [activeWorkoutDuration, setActiveWorkoutDuration] = useState(0);
+  const [workoutPlanSnapshot, setWorkoutPlanSnapshot] =
+    useState<WorkoutPlan | null>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  const clonePlan = (plan: WorkoutPlan): WorkoutPlan =>
+    JSON.parse(JSON.stringify(plan)) as WorkoutPlan;
+
+  const getPlanSignature = (plan: WorkoutPlan) =>
+    JSON.stringify({
+      id: plan.id,
+      name: plan.name,
+      uploadedAt: plan.uploadedAt,
+      days: plan.days.map((day) => ({
+        id: day.id,
+        name: day.name,
+        isRestDay: day.isRestDay,
+        exercises: day.exercises.map((exercise) => ({
+          id: exercise.id,
+          name: exercise.name,
+          sets: exercise.sets,
+          type: exercise.type,
+          reps: exercise.reps,
+          weight: exercise.weight ?? "",
+          restTime: exercise.restTime ?? "",
+          targetNotes: exercise.targetNotes ?? "",
+          notes: exercise.notes ?? "",
+        })),
+      })),
+    });
+
+  const ensureAuthenticated = async () => {
+    if (authLoading) {
+      await alert("Checking your login status. Please try again.");
+      return false;
+    }
+
+    if (user) {
+      return true;
+    }
+
+    const shouldLogin = await confirm(
+      "You need to sign in with email to generate a workout plan.",
+      {
+        title: "Login required",
+        confirmLabel: "Continue",
+        cancelLabel: "Not now",
+      }
+    );
+
+    if (shouldLogin) {
+      const email = await prompt("Enter your email to get a sign-in code.", {
+        title: "Email sign-in",
+        confirmLabel: "Send code",
+        cancelLabel: "Cancel",
+        placeholder: "you@example.com",
+      });
+      if (email) {
+        await signInWithEmailOtp(email);
+        await alert("Check your email for the sign-in code.");
+      }
+    }
+
+    return false;
+  };
+
+  const getAuthHeader = async () => {
+    const token = await getAccessToken();
+    if (!token) {
+      throw new Error("Missing auth token. Please sign in again.");
+    }
+    return { Authorization: `Bearer ${token}` };
+  };
 
   const handleUpload = async (file: File) => {
+    if (!(await ensureAuthenticated())) {
+      return;
+    }
+
     setIsUploading(true);
     setUploadError("");
 
@@ -73,6 +161,7 @@ export default function Home() {
 
       const response = await fetch("/api/extract-workout", {
         method: "POST",
+        headers: await getAuthHeader(),
         body: formData,
       });
 
@@ -94,6 +183,10 @@ export default function Home() {
   };
 
   const handleTextSubmit = async (text: string) => {
+    if (!(await ensureAuthenticated())) {
+      return;
+    }
+
     setIsUploading(true);
     setUploadError("");
 
@@ -103,6 +196,7 @@ export default function Home() {
 
       const response = await fetch("/api/extract-workout", {
         method: "POST",
+        headers: await getAuthHeader(),
         body: formData,
       });
 
@@ -123,41 +217,24 @@ export default function Home() {
     }
   };
 
-  const handleManualCreate = (payload: ManualPlanPayload) => {
+  const handleBuildManualPlan = async () => {
+    if (!(await ensureAuthenticated())) {
+      return;
+    }
+
     const now = Date.now();
-    const sanitizedDays = payload.days.map((day, dayIndex) => {
-      const exercises = day.isRestDay
-        ? []
-        : day.exercises
-            .filter((exercise) => exercise.name.trim())
-            .map((exercise, exerciseIndex) => ({
-              id: `exercise-${now}-${dayIndex}-${exerciseIndex}`,
-              name: exercise.name.trim(),
-              sets: Math.max(1, parseInt(exercise.sets, 10) || 1),
-              type: exercise.type,
-              reps:
-                exercise.reps.trim() ||
-                (exercise.type === "time" ? "60 sec" : "10"),
-              weight: exercise.weight.trim() || undefined,
-              restTime: exercise.restTime.trim() || undefined,
-              notes: "",
-              completed: false,
-              completedSets: [],
-            }));
-
-      return {
-        id: `day-${now}-${dayIndex}`,
-        name: day.name.trim() || `Day ${dayIndex + 1}`,
-        isRestDay: day.isRestDay,
-        exercises,
-      };
-    });
-
     const newPlan = {
       id: `plan-${now}`,
-      name: payload.planName,
+      name: "Build as You Go",
       uploadedAt: new Date().toISOString(),
-      days: sanitizedDays,
+      days: [
+        {
+          id: `day-${now}`,
+          name: "Day 1",
+          isRestDay: false,
+          exercises: [],
+        },
+      ],
       sessions: [],
     };
 
@@ -167,6 +244,17 @@ export default function Home() {
   };
 
   const handleStartDay = async (dayId: string) => {
+    if (workoutStartTime) {
+      if (dayId === selectedDayId) {
+        setView("tracker");
+        return;
+      }
+      await alert(
+        "A workout is already active. Resume it or finish it before starting a new one."
+      );
+      return;
+    }
+
     const day = workoutPlan?.days.find((d) => d.id === dayId);
 
     // Handle rest days differently
@@ -184,23 +272,25 @@ export default function Home() {
   const handleConfirmStart = () => {
     setSelectedDayId(pendingDayId);
     setWorkoutStartTime(Date.now());
+    if (workoutPlan) {
+      setWorkoutPlanSnapshot(clonePlan(workoutPlan));
+    }
     setView("tracker");
     setShowStartDialog(false);
   };
 
-  const handleBackToHome = async () => {
-    if (workoutStartTime) {
-      if (
-        await confirm(
-          "End your workout session? Your progress will be lost unless you finish the workout."
-        )
-      ) {
-        setView("home");
-        setWorkoutStartTime(undefined);
-        handleResetSession(selectedDayId);
-      }
-    } else {
+  const handleBackToHome = () => {
+    setView("home");
+  };
+
+  const handleDiscardWorkout = async () => {
+    if (
+      await confirm("Discard this workout? All your progress will be lost.")
+    ) {
       setView("home");
+      setWorkoutStartTime(undefined);
+      setWorkoutPlanSnapshot(null);
+      handleResetSession(selectedDayId);
     }
   };
 
@@ -244,14 +334,74 @@ export default function Home() {
     });
   };
 
-  const handleCompleteWorkout = (dayId: string, notes?: string) => {
-    // Calculate workout duration
+  const handleCompleteWorkout = async (dayId: string, notes?: string) => {
     const duration = workoutStartTime
       ? Math.floor((Date.now() - workoutStartTime) / 1000)
       : undefined;
-    handleCompleteSession(dayId, notes, duration);
+
+    const snapshot = workoutPlanSnapshot;
+    const currentPlan = workoutPlan;
+    const hasEdits =
+      snapshot &&
+      currentPlan &&
+      getPlanSignature(snapshot) !== getPlanSignature(currentPlan);
+
+    let shouldSaveEdits = true;
+    if (hasEdits) {
+      shouldSaveEdits = await confirm(
+        "You edited this workout. Save these edits to your plan?",
+        {
+          title: "Save workout edits",
+          confirmLabel: "Save edits",
+          cancelLabel: "One-time only",
+        }
+      );
+    }
+
+    const updatedPlan = await handleCompleteSession(dayId, notes, duration);
+
+    if (!shouldSaveEdits && snapshot && updatedPlan) {
+      const restoredPlan = clonePlan(snapshot);
+      restoredPlan.sessions = updatedPlan.sessions;
+      await handleReplaceWorkoutPlan(restoredPlan);
+    }
+
     setWorkoutStartTime(undefined);
+    setWorkoutPlanSnapshot(null);
     setView("home");
+  };
+
+  useEffect(() => {
+    if (!workoutStartTime) {
+      setActiveWorkoutDuration(0);
+      return;
+    }
+    const interval = setInterval(() => {
+      setActiveWorkoutDuration(
+        Math.floor((Date.now() - workoutStartTime) / 1000)
+      );
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [workoutStartTime]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
+    const ios =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    setIsIOS(ios);
+  }, []);
+
+  const formatDuration = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const viewTransition = {
@@ -294,8 +444,50 @@ export default function Home() {
                   <h1 className="text-2xl font-extrabold uppercase tracking-tight text-gray-100">
                     {allWorkoutPlans.length > 0
                       ? "Upload New Plan"
-                      : "Workout Tracker"}
+                      : "LiftLeap"}
                   </h1>
+                  <div className="ml-auto flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        const message = isStandalone
+                          ? "This app is already installed on your device."
+                          : isIOS
+                          ? 'To install: open Safari, tap Share, then "Add to Home Screen".'
+                          : 'Open your browser menu and choose "Install app" or "Add to Home screen".';
+                        void alert(message, {
+                          title: "Install this app",
+                          confirmLabel: "Got it",
+                        });
+                      }}
+                      className="min-w-[40px] min-h-[40px] rounded-lg border border-[#242432] bg-[#15151c] text-gray-300 hover:bg-[#1f232b] transition-colors flex items-center justify-center"
+                      title="Install app"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+                    {user ? (
+                      <span className="text-xs text-gray-400">Signed in</span>
+                    ) : (
+                      <button
+                        onClick={async () => {
+                          const email = await prompt(
+                            "Enter your email to get a sign-in code.",
+                            {
+                              title: "Email sign-in",
+                              confirmLabel: "Send code",
+                              cancelLabel: "Cancel",
+                              placeholder: "you@example.com",
+                            }
+                          );
+                          if (!email) return;
+                          await signInWithEmailOtp(email);
+                          await alert("Check your email for the sign-in code.");
+                        }}
+                        className="min-h-[40px] px-4 rounded-lg bg-[#1f232b] border border-[#242432] text-gray-200 transition-colors text-xs font-semibold hover:bg-[#2a2f3a]"
+                      >
+                        Sign in with email
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             </header>
@@ -313,16 +505,58 @@ export default function Home() {
                     results.
                   </p>
                   <p className="mt-2 text-sm text-gray-500">
-                    No account or credit card required to start
+                    No credit card required to generate workout plans
                   </p>
                 </div>
                 <UploadZone
                   onUpload={handleUpload}
                   onTextSubmit={handleTextSubmit}
-                  onManualCreate={handleManualCreate}
+                  onGeneratePlan={async (promptText, daysPerWeek) => {
+                    if (!(await ensureAuthenticated())) {
+                      return;
+                    }
+                    setIsUploading(true);
+                    setUploadError("");
+                    try {
+                      const response = await fetch("/api/generate-workout", {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          ...(await getAuthHeader()),
+                        },
+                        body: JSON.stringify({
+                          prompt: promptText,
+                          daysPerWeek,
+                        }),
+                      });
+                      if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(
+                          error.error || "Failed to generate workout plan"
+                        );
+                      }
+                      const workoutData = await response.json();
+                      setNewWorkoutPlan(workoutData);
+                    } catch (error) {
+                      console.error("Generate plan error:", error);
+                      setUploadError(
+                        error instanceof Error
+                          ? error.message
+                          : "Failed to generate workout plan"
+                      );
+                    } finally {
+                      setIsUploading(false);
+                    }
+                  }}
                   isLoading={isUploading}
                   error={uploadError}
                 />
+                <button
+                  onClick={handleBuildManualPlan}
+                  className="mt-6 min-h-[48px] px-6 rounded-xl border border-[#2a2f3a] bg-[#15151c] text-gray-400 font-semibold hover:bg-[#1f232b] hover:text-gray-200 transition-colors"
+                >
+                  Build manually as you go
+                </button>
               </div>
             </main>
           </motion.div>
@@ -338,6 +572,34 @@ export default function Home() {
               onDeleteDay={handleDeleteDay}
               onDeleteAllData={handleDeleteAllData}
             />
+            {workoutStartTime && workoutPlan && (
+              <div className="fixed bottom-0 left-0 right-0 z-30">
+                <div className="mx-4 mb-4 rounded-2xl border border-[#2a2f3a] bg-[#12151c]/95 backdrop-blur px-4 py-3 shadow-lg">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-[0.25em] text-gray-500">
+                        Active workout
+                      </p>
+                      <p className="text-sm font-semibold text-gray-100 truncate">
+                        {workoutPlan.days.find((d) => d.id === selectedDayId)
+                          ?.name ?? "Current session"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-[#c6ff5e] font-semibold">
+                        {formatDuration(activeWorkoutDuration)}
+                      </span>
+                      <button
+                        onClick={() => setView("tracker")}
+                        className="min-h-[36px] px-3 rounded-lg bg-[#c6ff5e] text-black text-xs font-semibold hover:bg-[#b6f54e]"
+                      >
+                        Resume
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </motion.div>
         ) : view === "progress" ? (
           <motion.div key="progress" {...viewTransition} layout>
@@ -351,6 +613,7 @@ export default function Home() {
               }}
               onDeletePlan={handleDeletePlan}
               onNewWorkout={handleNewWorkout}
+              onUpdateWorkoutName={handleUpdateWorkoutName}
             />
           </motion.div>
         ) : (
@@ -362,11 +625,13 @@ export default function Home() {
               onUpdateSet={handleUpdateSet}
               onUpdateNotes={handleUpdateNotes}
               onUpdateExerciseName={handleUpdateExerciseName}
+              onUpdateExercise={handleUpdateExercise}
               onUpdateWorkoutName={handleUpdateWorkoutName}
               onUpdateDayName={handleUpdateDayName}
               onCompleteSession={handleCompleteWorkout}
               onResetSession={handleResetSessionConfirm}
               onBackToHome={handleBackToHome}
+              onDiscardWorkout={handleDiscardWorkout}
               onViewProgress={() => setView("progress")}
               onAddExercise={handleAddExercise}
               onDeleteExercise={handleDeleteExercise}

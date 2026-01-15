@@ -152,7 +152,7 @@ pdf-to-workout/
 ├── lib/
 │   ├── gemini.ts                 # Gemini API integration
 │   ├── pdfToImage.ts             # PDF to image conversion utility
-│   └── localStorage.ts           # Local storage utilities
+│   └── localStorage.ts           # Legacy local storage utilities (unused)
 ├── types/
 │   └── workout.ts                # TypeScript type definitions
 └── package.json
@@ -160,15 +160,84 @@ pdf-to-workout/
 
 ## Data Structure
 
-All workout data is stored locally in your browser using localStorage. The main data structure includes:
+All workout data is stored in Supabase and scoped to the authenticated user.
 
-- **Workout Plan**: Contains workout name, upload date, workout days, and session history
+### Required tables
+
+```sql
+create table public.workout_plans (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  id text not null,
+  name text,
+  uploaded_at timestamptz,
+  data jsonb not null,
+  is_active boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  primary key (user_id, id)
+);
+
+create table public.user_settings (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  plate_configuration jsonb,
+  barbell_weight numeric
+);
+
+create table public.user_exercises (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text not null,
+  created_at timestamptz default now(),
+  primary key (user_id, name)
+);
+
+create table public.exercise_stats (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  exercise_name text not null,
+  stats jsonb,
+  updated_at timestamptz default now(),
+  primary key (user_id, exercise_name)
+);
+
+alter table public.workout_plans enable row level security;
+alter table public.user_settings enable row level security;
+alter table public.user_exercises enable row level security;
+alter table public.exercise_stats enable row level security;
+
+create policy "workout plans are user-owned"
+on public.workout_plans
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "user settings are user-owned"
+on public.user_settings
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "user exercises are user-owned"
+on public.user_exercises
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create policy "exercise stats are user-owned"
+on public.exercise_stats
+for all
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+```
+
+### Stored payloads
+
+- **Workout Plan**: Contains workout name, upload date, workout days, and session history (stored as JSON in `workout_plans.data`)
 - **Workout Days**: Organizes exercises by day/split (e.g., "Day 1: Push", "Day 2: Pull")
 - **Exercises**: Each exercise has name, sets, reps, optional weight/rest time, and completion tracking
 - **Set Records**: Individual set tracking with reps, weight, and completion status
 - **Workout Sessions**: Historical records of completed workouts with dates, completed day, and notes
 
 The app automatically detects whether your workout plan is:
+
 - **Single-day**: All exercises in one workout
 - **Multi-day split**: Exercises organized by days (Push/Pull/Legs, Upper/Lower, etc.)
 
@@ -197,9 +266,8 @@ The app automatically detects whether your workout plan is:
 
 ### Data not persisting
 
-- Check that your browser allows localStorage
-- Make sure you're not in private/incognito mode
-- Try clearing your browser cache and reloading
+- Verify Supabase env vars are set correctly
+- Confirm the user is signed in and RLS policies are enabled
 
 ### API Rate Limits
 
@@ -210,6 +278,7 @@ The app automatically detects whether your workout plan is:
 ## Deployment
 
 Ready to deploy to production? See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions on deploying to:
+
 - ✅ **Vercel** (Recommended - one-click deploy)
 - Netlify
 - Railway
@@ -229,11 +298,13 @@ See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete instructions.
 This app is a Progressive Web App (PWA) and can be installed on mobile devices:
 
 **iOS:**
+
 1. Open in Safari
 2. Tap Share button
 3. Tap "Add to Home Screen"
 
 **Android:**
+
 1. Open in Chrome
 2. Tap the "Install" prompt or menu → "Install app"
 

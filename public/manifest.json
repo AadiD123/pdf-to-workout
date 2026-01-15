@@ -1,7 +1,7 @@
 {
-  "name": "PDF to Workout Tracker",
-  "short_name": "Workout Tracker",
-  "description": "Convert your PDF workout plans into an interactive tracking app",
+  "name": "LiftLeap",
+  "short_name": "LiftLeap",
+  "description": "Convert your workout plans into an interactive tracking app",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

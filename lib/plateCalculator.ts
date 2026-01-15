@@ -16,6 +16,21 @@ export interface PlateCalculationResult {
   barbellWeight: number;
 }
 
+let plateConfigurationCache: PlateConfiguration[] | null = null;
+let barbellWeightCache: number | null = null;
+
+export function setPlateConfigurationCache(config: PlateConfiguration[]): void {
+  plateConfigurationCache = config;
+}
+
+export function setBarbellWeightCache(weight: number): void {
+  barbellWeightCache = weight;
+}
+
+export function getBarbellWeight(): number {
+  return barbellWeightCache ?? BARBELL_WEIGHT;
+}
+
 /**
  * Calculate the number of plates needed for each side of the barbell
  * @param targetWeight - Total target weight including barbell
@@ -101,25 +116,16 @@ export function formatPlateResult(result: PlateCalculationResult): string {
  * Get default plate configuration from localStorage or return standard
  */
 export function getPlateConfiguration(): PlateConfiguration[] {
-  if (typeof window !== 'undefined') {
-    const stored = localStorage.getItem('plate-configuration');
-    if (stored) {
-      try {
-        return JSON.parse(stored);
-      } catch (e) {
-        console.error('Error parsing plate configuration:', e);
-      }
-    }
-  }
-  return STANDARD_PLATES.map(w => ({ weight: w, available: 10 }));
+  return (
+    plateConfigurationCache ??
+    STANDARD_PLATES.map((weight) => ({ weight, available: 10 }))
+  );
 }
 
 /**
- * Save plate configuration to localStorage
+ * Save plate configuration to in-memory cache
  */
 export function savePlateConfiguration(config: PlateConfiguration[]): void {
-  if (typeof window !== 'undefined') {
-    localStorage.setItem('plate-configuration', JSON.stringify(config));
-  }
+  setPlateConfigurationCache(config);
 }
 

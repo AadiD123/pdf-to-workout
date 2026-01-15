@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { requireSupabaseUser } from '@/lib/supabaseAuth';
 
 const apiKey = process.env.GOOGLE_GEMINI_API_KEY;
 
@@ -11,6 +12,11 @@ const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireSupabaseUser(request);
+    if ('error' in authResult) {
+      return authResult.error;
+    }
+
     const { exerciseName, sets, reps, weight, type } = await request.json();
 
     if (!exerciseName) {

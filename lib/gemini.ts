@@ -123,7 +123,6 @@ Important:
   const response = await result.response;
   const text = response.text();
 
-  // Clean up the response - remove markdown code blocks if present
   let cleanedText = text.trim();
   if (cleanedText.startsWith("```json")) {
     cleanedText = cleanedText.replace(/```json\n?/, "").replace(/```\n?$/, "");
@@ -134,7 +133,6 @@ Important:
   try {
     return JSON.parse(cleanedText);
   } catch (error) {
-    console.error("Failed to parse Gemini response:", cleanedText);
     throw new Error("Failed to parse workout data from image");
   }
 }
@@ -215,7 +213,6 @@ ${workoutText}`;
   const response = result.response;
   let cleanedText = response.text().trim();
 
-  // Remove markdown code blocks if present
   if (cleanedText.startsWith("```json")) {
     cleanedText = cleanedText.replace(/```json\n?/, "").replace(/```\n?$/, "");
   } else if (cleanedText.startsWith("```")) {
@@ -227,5 +224,111 @@ ${workoutText}`;
   } catch (error) {
     console.error("Failed to parse Gemini response:", cleanedText);
     throw new Error("Failed to parse workout data from text");
+  }
+}
+
+export async function matchExercisesToCatalog(
+  exerciseNames: string[],
+  catalog: string[]
+) {
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const prompt = `You are matching workout exercise names to a canonical catalog.
+
+Catalog exercises:
+${catalog.join("\n")}
+
+Input exercise names:
+${exerciseNames.join("\n")}
+
+Return ONLY valid JSON with this shape:
+{
+  "matches": [
+    { "input": "Original Name", "match": "Canonical Name or null" }
+  ]
+}
+
+Rules:
+- Match to the closest catalog exercise name when it's clearly the same movement.
+- If no close match exists, return null for "match".
+- Preserve capitalization from the catalog.`;
+
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  const text = response.text().trim();
+  let cleanedText = text;
+
+  if (cleanedText.startsWith("```json")) {
+    cleanedText = cleanedText.replace(/```json\n?/, "").replace(/```\n?$/, "");
+  } else if (cleanedText.startsWith("```")) {
+    cleanedText = cleanedText.replace(/```\n?/, "").replace(/```\n?$/, "");
+  }
+
+  try {
+    return JSON.parse(cleanedText) as {
+      matches: { input: string; match: string | null }[];
+    };
+  } catch (error) {
+    console.error("Failed to parse Gemini match response:", cleanedText);
+    throw new Error("Failed to parse exercise name matches");
+  }
+}
+
+export async function generateWorkoutFromGoal(
+  goalPrompt: string,
+  daysPerWeek: number
+) {
+  const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+  const prompt = `You are a fitness coach creating a structured weekly workout plan.
+
+User goal:
+${goalPrompt}
+
+Requirements:
+- The user wants ${daysPerWeek} training days per week.
+- Always return a full 7-day week. If training days are fewer than 7, include rest days to fill the week.
+- Return ONLY valid JSON with this shape:
+{
+  "name": "Plan name",
+  "days": [
+    {
+      "name": "Day 1 - Focus",
+      "isRestDay": false,
+      "exercises": [
+        {
+          "name": "Bench Press",
+          "type": "reps",
+          "sets": 3,
+          "reps": "8-12",
+          "weight": "optional",
+          "restTime": "90 sec",
+          "notes": "optional"
+        }
+      ]
+    }
+  ]
+}
+
+Guidelines:
+- Use exercise names that sound like standard gym movements.
+- Label rest days clearly (e.g., "Rest Day") and set "isRestDay": true with empty exercises.
+- Prefer 4-8 exercises per day.
+- Use "reps" for lifting and "time" for timed cardio/holds.
+- Keep it realistic and safe.`;
+
+  const result = await model.generateContent(prompt);
+  const response = result.response;
+  let cleanedText = response.text().trim();
+
+  if (cleanedText.startsWith("```json")) {
+    cleanedText = cleanedText.replace(/```json\n?/, "").replace(/```\n?$/, "");
+  } else if (cleanedText.startsWith("```")) {
+    cleanedText = cleanedText.replace(/```\n?/, "").replace(/```\n?$/, "");
+  }
+
+  try {
+    return JSON.parse(cleanedText);
+  } catch (error) {
+    console.error("Failed to parse Gemini plan response:", cleanedText);
+    throw new Error("Failed to parse workout plan");
   }
 }
