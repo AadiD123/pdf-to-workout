@@ -500,9 +500,9 @@ export default function Home() {
                     Stop Typing. Start Lifting
                   </h2>
                   <p className="text-lg text-gray-400">
-                    Turn your workout PDFs or Reddit routines into a smart,
-                    interactive tracker in 5 seconds. No manual setup, just
-                    results.
+                    Convert any goal, workout plan PDF/image into a
+                    high-performance tracker. No manual data entry, no complex
+                    setup—just lift
                   </p>
                   <p className="mt-2 text-sm text-gray-500">
                     No credit card required to generate workout plans
@@ -511,6 +511,7 @@ export default function Home() {
                 <UploadZone
                   onUpload={handleUpload}
                   onTextSubmit={handleTextSubmit}
+                  onRequireAuth={ensureAuthenticated}
                   onGeneratePlan={async (promptText, daysPerWeek) => {
                     if (!(await ensureAuthenticated())) {
                       return;

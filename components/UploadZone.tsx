@@ -16,6 +16,7 @@ interface UploadZoneProps {
   onUpload: (file: File) => void;
   onTextSubmit: (text: string) => void;
   onGeneratePlan: (prompt: string, daysPerWeek: number) => void;
+  onRequireAuth: () => Promise<boolean>;
   isLoading: boolean;
   error?: string;
 }
@@ -24,6 +25,7 @@ export default function UploadZone({
   onUpload,
   onTextSubmit,
   onGeneratePlan,
+  onRequireAuth,
   isLoading,
   error,
 }: UploadZoneProps) {
@@ -39,8 +41,14 @@ export default function UploadZone({
   const maxGoalChars = 200;
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+  const ensureAuth = async () => {
+    if (!onRequireAuth) return true;
+    return await onRequireAuth();
+  };
+
+  const handleDragOver = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    if (!(await ensureAuth())) return;
     setIsDragging(true);
   };
 
@@ -49,9 +57,10 @@ export default function UploadZone({
     setIsDragging(false);
   };
 
-  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+  const handleDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(false);
+    if (!(await ensureAuth())) return;
 
     const files = e.dataTransfer.files;
     if (files.length > 0) {
@@ -59,7 +68,8 @@ export default function UploadZone({
     }
   };
 
-  const handleFileInput = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFileInput = async (e: ChangeEvent<HTMLInputElement>) => {
+    if (!(await ensureAuth())) return;
     const files = e.target.files;
     if (files && files.length > 0) {
       handleFile(files[0]);
@@ -97,8 +107,9 @@ export default function UploadZone({
     onUpload(file);
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (!isLoading && inputMode === "file") {
+      if (!(await ensureAuth())) return;
       fileInputRef.current?.click();
     }
   };
@@ -133,6 +144,21 @@ export default function UploadZone({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-6 bg-[#15151c] border border-[#242432] p-1.5 rounded-xl">
         <button
           onClick={() => {
+            setInputMode("generate");
+            setPreview(null);
+          }}
+          disabled={isLoading}
+          className={`w-full min-h-[44px] py-2.5 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 tracking-wide text-xs sm:text-sm leading-tight ${
+            inputMode === "generate"
+              ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]"
+              : "text-gray-300 hover:bg-[#1a1d24]"
+          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span className="text-center">Build Plan</span>
+        </button>
+        <button
+          onClick={() => {
             setInputMode("file");
             setPreview(null);
           }}
@@ -144,7 +170,7 @@ export default function UploadZone({
           } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <Upload className="w-4 h-4" />
-          <span className="text-center">Upload File</span>
+          <span className="text-center">Upload Plan</span>
         </button>
         <button
           onClick={() => {
@@ -159,22 +185,7 @@ export default function UploadZone({
           } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
         >
           <Type className="w-4 h-4" />
-          <span className="text-center">Paste Text</span>
-        </button>
-        <button
-          onClick={() => {
-            setInputMode("generate");
-            setPreview(null);
-          }}
-          disabled={isLoading}
-          className={`w-full min-h-[44px] py-2.5 px-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 tracking-wide text-xs sm:text-sm leading-tight ${
-            inputMode === "generate"
-              ? "bg-[#1f232b] text-[#c6ff5e] border border-[#2f3340] shadow-[0_0_18px_rgba(198,255,94,0.15)]"
-              : "text-gray-300 hover:bg-[#1a1d24]"
-          } ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
-          <Sparkles className="w-4 h-4" />
-          <span className="text-center">Build Plan</span>
+          <span className="text-center">Text Plan</span>
         </button>
       </div>
 
@@ -276,11 +287,14 @@ export default function UploadZone({
           ) : (
             <>
               <label className="block text-gray-200 font-semibold mb-3">
-                Paste your LLM generated plan here :)
+                Paste your workout plan
               </label>
               <textarea
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
+                onFocus={async () => {
+                  await ensureAuth();
+                }}
                 placeholder="Example:&#10;&#10;Day 1: Push&#10;Bench Press - 4x8-12 @ 185lbs, Rest: 90 sec&#10;Overhead Press - 3x10 @ 95lbs&#10;&#10;Day 2: Pull&#10;Deadlift - 4x6 @ 225lbs&#10;Pull-ups - 3x8-10&#10;&#10;Day 3: Rest"
                 className="w-full h-64 p-4 border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 resize-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent transition-all"
                 disabled={isLoading}
@@ -319,6 +333,9 @@ export default function UploadZone({
               <textarea
                 value={goalInput}
                 onChange={(e) => setGoalInput(e.target.value)}
+                onFocus={async () => {
+                  await ensureAuth();
+                }}
                 placeholder="Example: I want to gain muscle, 45 minutes per session, prefer compound lifts."
                 className="w-full h-40 p-4 border border-[#2a2f3a] rounded-xl bg-[#0f1218] text-gray-100 resize-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent transition-all"
                 maxLength={maxGoalChars}
@@ -339,6 +356,9 @@ export default function UploadZone({
                   min={1}
                   max={7}
                   value={daysPerWeek}
+                  onFocus={async () => {
+                    await ensureAuth();
+                  }}
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value === "") {

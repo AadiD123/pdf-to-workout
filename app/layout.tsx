@@ -18,6 +18,10 @@ export const metadata: Metadata = {
   description:
     "Transform your workout plans into interactive trackers with AI. Upload your workout images and track your progress with ease.",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/logo.png",
+    apple: "/logo.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
