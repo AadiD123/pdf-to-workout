@@ -9,6 +9,7 @@ interface AuthContextValue {
   session: Session | null;
   isLoading: boolean;
   signInWithEmailOtp: (email: string) => Promise<void>;
+  verifyEmailOtp: (email: string, token: string) => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => Promise<string | null>;
 }
@@ -65,6 +66,16 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
             emailRedirectTo: window.location.origin,
           },
         });
+      },
+      verifyEmailOtp: async (email: string, token: string) => {
+        const { error } = await supabase.auth.verifyOtp({
+          email,
+          token,
+          type: "email",
+        });
+        if (error) {
+          throw error;
+        }
       },
       signOut: async () => {
         await supabase.auth.signOut();

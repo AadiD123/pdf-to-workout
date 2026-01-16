@@ -5,6 +5,9 @@ import { ArrowLeft, Calendar, Dumbbell, Clock, ChevronDown, ChevronUp, Play, Tim
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
 import { useEffect, useState } from 'react';
 import { useDialog } from '@/components/DialogProvider';
+import { useAuth } from '@/components/AuthProvider';
+import { useOtpSignIn } from '@/components/OtpSignInProvider';
+import { supabase } from '@/lib/supabaseClient';
 import { formatSecondsToDisplay } from '@/lib/timeUtils';
 
 interface ProgressViewProps {
@@ -26,11 +29,18 @@ export default function ProgressView({
   onNewWorkout,
   onUpdateWorkoutName,
 }: ProgressViewProps) {
-  const { confirm } = useDialog();
+  const { confirm, alert } = useDialog();
+  const { user, isLoading: authLoading } = useAuth();
+  const { requestOtpSignIn } = useOtpSignIn();
   const [selectedMonth, setSelectedMonth] = useState(new Date());
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [isEditingPlanName, setIsEditingPlanName] = useState(false);
   const [planNameDraft, setPlanNameDraft] = useState(workoutPlan.name);
+  const [showFeedbackForm, setShowFeedbackForm] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackPrice, setFeedbackPrice] = useState('');
+  const [feedbackError, setFeedbackError] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const sessions = workoutPlan.sessions;
   
@@ -61,6 +71,69 @@ export default function ProgressView({
 
   const toggleSessionExpand = (sessionId: string) => {
     setExpandedSessionId(expandedSessionId === sessionId ? null : sessionId);
+  };
+
+  const ensureAuthenticated = async () => {
+    if (authLoading) {
+      await alert('Checking your login status. Please try again.');
+      return false;
+    }
+
+    if (user) {
+      return true;
+    }
+
+    const shouldLogin = await confirm(
+      'You need to sign in with email to submit feedback.',
+      {
+        title: 'Login required',
+        confirmLabel: 'Continue',
+        cancelLabel: 'Not now',
+      }
+    );
+
+    if (shouldLogin) {
+      return await requestOtpSignIn();
+    }
+
+    return false;
+  };
+
+  const handleSubmitFeedback = async () => {
+    setFeedbackError('');
+    if (!(await ensureAuthenticated())) {
+      return;
+    }
+    const trimmed = feedbackText.trim();
+    if (!trimmed) {
+      setFeedbackError('Please share a feature request or bug.');
+      return;
+    }
+    if (!feedbackPrice) {
+      setFeedbackError('Please select a pricing option.');
+      return;
+    }
+    if (!user) return;
+
+    setIsSubmittingFeedback(true);
+    const { error } = await supabase.from('user_feedback').insert({
+      user_id: user.id,
+      plan_id: workoutPlan.id,
+      message: trimmed,
+      price_preference: feedbackPrice,
+    });
+    setIsSubmittingFeedback(false);
+
+    if (error) {
+      console.error('Failed to submit feedback:', error);
+      setFeedbackError('Failed to submit feedback. Please try again.');
+      return;
+    }
+
+    setFeedbackText('');
+    setFeedbackPrice('');
+    setShowFeedbackForm(false);
+    await alert('Thanks for the feedback!');
   };
 
   useEffect(() => {
@@ -153,6 +226,66 @@ export default function ProgressView({
                 Edit name
               </button>
             )}
+        <div className="pt-6 border-t border-[#242432]">
+          <button
+            onClick={() => setShowFeedbackForm((prev) => !prev)}
+            className="w-full min-h-[48px] rounded-xl border border-[#242432] bg-[#15151c] text-gray-200 font-semibold hover:bg-[#1f232b] transition-colors"
+          >
+            Bug Fix / Suggestions
+          </button>
+          {showFeedbackForm && (
+            <div className="mt-4 bg-[#15151c] border border-[#242432] rounded-xl p-4 space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-100">
+                  Help Shape the Future of LiftLeap
+                </h3>
+                <p className="text-sm text-gray-500 mt-1">
+                  We build what matters most to you. To help us prioritize this feature, tell us what a fully-powered LiftLeap is worth to you.
+                </p>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  Features you want or bugs you found:
+                </label>
+                <textarea
+                  value={feedbackText}
+                  onChange={(event) => setFeedbackText(event.target.value)}
+                  rows={4}
+                  className="w-full rounded-xl border border-[#2a2f3a] bg-[#0f1218] p-3 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  I would happily pay:
+                </label>
+                <select
+                  value={feedbackPrice}
+                  onChange={(event) => setFeedbackPrice(event.target.value)}
+                  className="w-full min-h-[44px] rounded-xl border border-[#2a2f3a] bg-[#0f1218] p-3 text-sm text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent"
+                >
+                  <option value="" disabled>
+                    Select an option
+                  </option>
+                  <option value="$2/mo">$2/mo</option>
+                  <option value="$6/mo">$6/mo</option>
+                  <option value="$10/mo">$10/mo</option>
+                  <option value="$50 Lifetime">$50 Lifetime</option>
+                  <option value="$99 Lifetime">$99 Lifetime</option>
+                </select>
+              </div>
+              {feedbackError && (
+                <p className="text-sm text-red-300">{feedbackError}</p>
+              )}
+              <button
+                onClick={handleSubmitFeedback}
+                disabled={isSubmittingFeedback}
+                className="w-full min-h-[48px] rounded-xl bg-[#c6ff5e] text-black font-semibold hover:bg-[#b6f54e] disabled:bg-[#3a3a48] disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSubmittingFeedback ? 'Submitting...' : 'Submit'}
+              </button>
+            </div>
+          )}
+        </div>
           </div>
           <p className="text-sm text-gray-500">
             Uploaded {format(new Date(workoutPlan.uploadedAt), 'MMM d, yyyy')}
