@@ -153,7 +153,7 @@ export function useWorkout() {
     }
 
     setWorkoutPlan(plan);
-    await upsertPlan(plan);
+    // Don't save to database - only update local state during workout
   };
 
   const handleUpdateNotes = async (exerciseId: string, notes: string) => {
@@ -170,7 +170,7 @@ export function useWorkout() {
       }
     }
     setWorkoutPlan(plan);
-    await upsertPlan(plan);
+    // Don't save to database - only update local state during workout
   };
 
   const handleUpdateExerciseName = async (exerciseId: string, name: string) => {
@@ -184,7 +184,7 @@ export function useWorkout() {
       }
     }
     setWorkoutPlan(plan);
-    await upsertPlan(plan);
+    // Don't save to database - only update local state during workout
   };
 
   const handleUpdateExercise = async (
@@ -204,7 +204,7 @@ export function useWorkout() {
       }
     }
     setWorkoutPlan(plan);
-    await upsertPlan(plan);
+    // Don't save to database - only update local state during workout
   };
 
   const handleUpdateWorkoutName = async (name: string) => {
@@ -287,17 +287,8 @@ export function useWorkout() {
 
   const handleResetSession = async (dayId?: string) => {
     if (!workoutPlan || !user) return;
-    const plan = clonePlan(workoutPlan);
-    plan.days.forEach((day) => {
-      if (!dayId || day.id === dayId) {
-        day.exercises.forEach((exercise) => {
-          exercise.completed = false;
-          exercise.completedSets = [];
-        });
-      }
-    });
-    setWorkoutPlan(plan);
-    await upsertPlan(plan);
+    // Reload from database to discard unsaved changes
+    await refreshPlans();
   };
 
   const handleClearWorkout = async () => {
@@ -388,7 +379,7 @@ export function useWorkout() {
     if (day) {
       day.exercises.push(exercise);
       setWorkoutPlan(plan);
-      await upsertPlan(plan);
+      // Don't save to database - only update local state during workout
     }
   };
 
@@ -399,7 +390,7 @@ export function useWorkout() {
     if (day) {
       day.exercises = day.exercises.filter((ex) => ex.id !== exerciseId);
       setWorkoutPlan(plan);
-      await upsertPlan(plan);
+      // Don't save to database - only update local state during workout
     }
   };
 
@@ -419,7 +410,7 @@ export function useWorkout() {
           setType: 'normal',
         });
         setWorkoutPlan(plan);
-        await upsertPlan(plan);
+        // Don't save to database - only update local state during workout
       }
     }
   };
@@ -436,7 +427,7 @@ export function useWorkout() {
           .filter((s) => s.setNumber !== setNumber)
           .map((s, index) => ({ ...s, setNumber: index + 1 }));
         setWorkoutPlan(plan);
-        await upsertPlan(plan);
+        // Don't save to database - only update local state during workout
       }
     }
   };

@@ -424,12 +424,23 @@ export default function WorkoutTracker({
                 >
                   Save Workout
                 </button>
-                <button
-                  onClick={() => setShowCompleteDialog(false)}
-                  className="w-full py-3 text-gray-400 hover:text-gray-100 font-medium transition-colors"
-                >
-                  Cancel
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowCompleteDialog(false)}
+                    className="w-full py-3 text-gray-400 hover:text-gray-100 font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      handleDiscardWorkout();
+                      setShowMenu(false);
+                    }}
+                    className="w-full text-left py-3 text-red-400 hover:bg-[#1f232b] font-medium transition-colors"
+                  >
+                    Discard Workout
+                  </button>
+                </div>
               </div>
             </div>
           </div>

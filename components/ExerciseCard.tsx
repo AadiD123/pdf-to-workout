@@ -91,10 +91,11 @@ function SwipeableRow({
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative"
+      className="relative bg-[#15151c]"
       style={{
         transform: `translateX(${getTranslateX()}px)`,
         transition: touchStart === null ? "transform 0.3s ease-out" : "none",
+        zIndex: 1,
       }}
     >
       {children}
@@ -473,7 +474,7 @@ export default function ExerciseCard({
               }
               placeholder="Add target notes..."
               rows={1}
-              className="mt-2 w-full px-2 py-1 text-xs bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent resize-none placeholder:text-gray-600"
+              className="mt-2 w-full px-2 py-1 text-xs rounded-lg text-gray-300 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent resize-none placeholder:text-gray-600"
               onFocus={(e) => (e.target.rows = 3)}
               onBlur={(e) => {
                 if (!e.target.value) e.target.rows = 1;
@@ -512,250 +513,259 @@ export default function ExerciseCard({
                 const isSwiped = swipedSetNumber === setNumber;
 
                 return (
-                  <tr key={setNumber} className="relative overflow-visible">
-                    {/* Delete button revealed on swipe */}
-                    {onDeleteSet && exercise.sets > 1 && isSwiped && (
-                      <td
-                        className="absolute inset-y-0 right-0 flex items-center justify-end pr-4 bg-red-500"
-                        style={{ width: "80px" }}
-                      >
-                        <button
-                          onClick={() => {
-                            (async () => {
-                              if (await confirm("Delete this set?")) {
-                                onDeleteSet(setNumber);
-                                setSwipedSetNumber(null);
-                              }
-                            })();
-                          }}
-                          className="text-white font-semibold"
-                        >
-                          Delete
-                        </button>
-                      </td>
-                    )}
+                  <tr key={setNumber} className="relative">
+                    <td
+                      colSpan={!isTimeBased ? 4 : 3}
+                      className="p-0 relative overflow-hidden"
+                    >
+                      <div className="relative">
+                        {/* Delete button background - revealed on swipe */}
+                        {onDeleteSet && exercise.sets > 1 && (
+                          <div className="absolute inset-0 bg-red-500 flex items-center justify-end pr-4">
+                            <button
+                              onClick={() => {
+                                (async () => {
+                                  if (await confirm("Delete this set?")) {
+                                    onDeleteSet(setNumber);
+                                    setSwipedSetNumber(null);
+                                  }
+                                })();
+                              }}
+                              className="text-white font-semibold text-sm min-w-[44px] min-h-[44px]"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
 
-                    <td colSpan={!isTimeBased ? 4 : 3} className="p-0">
-                      <SwipeableRow
-                        isSwiped={isSwiped}
-                        onSwipe={() => setSwipedSetNumber(setNumber)}
-                        onSwipeCancel={() => setSwipedSetNumber(null)}
-                        canDelete={
-                          onDeleteSet !== undefined && exercise.sets > 1
-                        }
-                      >
-                        <table className="w-full">
-                          <tbody>
-                            <tr
-                              className={`
+                        <SwipeableRow
+                          isSwiped={isSwiped}
+                          onSwipe={() => setSwipedSetNumber(setNumber)}
+                          onSwipeCancel={() => setSwipedSetNumber(null)}
+                          canDelete={
+                            onDeleteSet !== undefined && exercise.sets > 1
+                          }
+                        >
+                          <table className="w-full bg-[#15151c]">
+                            <tbody>
+                              <tr
+                                className={`
                             border-b border-[#1f2230]
                             ${isCompleted ? "bg-[#0f1915]" : ""}
                           `}
-                            >
-                              <td className="py-3 px-4 text-sm font-medium text-gray-300">
-                                <div className="inline-flex flex-col items-start">
-                                  <button
-                                    type="button"
-                                    onClick={(event) => {
-                                      const target =
-                                        event.currentTarget as HTMLElement;
-                                      const rect =
-                                        target.getBoundingClientRect();
-                                      setSetTypeMenuPosition({
-                                        top: rect.bottom + 8,
-                                        left: rect.left,
-                                      });
-                                      setEditingSetType((prev) =>
-                                        prev === setNumber ? null : setNumber
-                                      );
-                                    }}
-                                    className="text-left"
-                                  >
-                                    <span className="block">{setNumber}</span>
-                                    {getSetTypeLabel(getSetType(setRecord)) && (
-                                      <span
-                                        className={`text-[10px] font-semibold tracking-[0.28em] uppercase ${getSetTypeClassName(
-                                          getSetType(setRecord)
-                                        )}`}
-                                      >
-                                        {getSetTypeLabel(getSetType(setRecord))}
-                                      </span>
-                                    )}
-                                  </button>
-                                </div>
-                              </td>
-
-                              {/* Weight column - only for rep-based exercises */}
-                              {!isTimeBased && (
-                                <td className="py-3 px-2">
-                                  <input
-                                    type="number"
-                                    inputMode="decimal"
-                                    placeholder={getTargetWeight() || "0"}
-                                    value={setRecord?.weight || ""}
-                                    onChange={(e) =>
-                                      handleSetComplete(setNumber, {
-                                        setNumber,
-                                        reps: setRecord?.reps || 0,
-                                        duration: setRecord?.duration,
-                                        weight: parseFloat(e.target.value) || 0,
-                                        completed:
-                                          setRecord?.completed || false,
-                                        setType: getSetType(setRecord),
-                                      })
-                                    }
-                                    onFocus={(e) => {
-                                      // If empty and has placeholder, offer to use placeholder value
-                                      if (
-                                        !setRecord?.weight &&
-                                        getTargetWeight()
-                                      ) {
-                                        const targetWeight = parseFloat(
-                                          getTargetWeight()
+                              >
+                                <td className="py-3 px-4 text-sm font-medium text-gray-300">
+                                  <div className="inline-flex flex-col items-start">
+                                    <button
+                                      type="button"
+                                      onClick={(event) => {
+                                        const target =
+                                          event.currentTarget as HTMLElement;
+                                        const rect =
+                                          target.getBoundingClientRect();
+                                        setSetTypeMenuPosition({
+                                          top: rect.bottom + 8,
+                                          left: rect.left,
+                                        });
+                                        setEditingSetType((prev) =>
+                                          prev === setNumber ? null : setNumber
                                         );
-                                        if (!isNaN(targetWeight)) {
-                                          handleSetComplete(setNumber, {
-                                            setNumber,
-                                            reps: setRecord?.reps || 0,
-                                            duration: setRecord?.duration,
-                                            weight: targetWeight,
-                                            completed:
-                                              setRecord?.completed || false,
-                                            setType: getSetType(setRecord),
-                                          });
-                                        }
-                                      }
-                                    }}
-                                    className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
-                                  />
+                                      }}
+                                      className="text-left"
+                                    >
+                                      <span className="block">{setNumber}</span>
+                                      {getSetTypeLabel(
+                                        getSetType(setRecord)
+                                      ) && (
+                                        <span
+                                          className={`text-[10px] font-semibold tracking-[0.28em] uppercase ${getSetTypeClassName(
+                                            getSetType(setRecord)
+                                          )}`}
+                                        >
+                                          {getSetTypeLabel(
+                                            getSetType(setRecord)
+                                          )}
+                                        </span>
+                                      )}
+                                    </button>
+                                  </div>
                                 </td>
-                              )}
 
-                              {/* Reps or Duration column */}
-                              <td className="py-3 px-2">
-                                {isTimeBased ? (
-                                  // Time-based input with timer format
-                                  <input
-                                    type="text"
-                                    inputMode="numeric"
-                                    placeholder={formatSecondsToTime(
-                                      getTargetDuration()
-                                    )}
-                                    value={
-                                      setRecord?.duration
-                                        ? formatSecondsToTime(
-                                            setRecord.duration
-                                          )
-                                        : ""
-                                    }
-                                    onChange={(e) => {
-                                      const seconds = parseTimeToSeconds(
-                                        e.target.value
-                                      );
-                                      handleSetComplete(setNumber, {
-                                        setNumber,
-                                        reps: seconds, // Store in reps for backwards compatibility
-                                        duration: seconds,
-                                        weight: setRecord?.weight || 0,
-                                        completed:
-                                          setRecord?.completed || false,
-                                        setType: getSetType(setRecord),
-                                      });
-                                    }}
-                                    onFocus={(e) => {
-                                      // Auto-fill target duration
-                                      if (
-                                        !setRecord?.duration &&
-                                        getTargetDuration()
-                                      ) {
-                                        const targetDuration =
-                                          getTargetDuration();
+                                {/* Weight column - only for rep-based exercises */}
+                                {!isTimeBased && (
+                                  <td className="py-3 px-2">
+                                    <input
+                                      type="number"
+                                      inputMode="decimal"
+                                      placeholder={getTargetWeight() || "0"}
+                                      value={setRecord?.weight || ""}
+                                      onChange={(e) =>
                                         handleSetComplete(setNumber, {
                                           setNumber,
-                                          reps: targetDuration,
-                                          duration: targetDuration,
+                                          reps: setRecord?.reps || 0,
+                                          duration: setRecord?.duration,
+                                          weight:
+                                            parseFloat(e.target.value) || 0,
+                                          completed:
+                                            setRecord?.completed || false,
+                                          setType: getSetType(setRecord),
+                                        })
+                                      }
+                                      onFocus={(e) => {
+                                        // If empty and has placeholder, offer to use placeholder value
+                                        if (
+                                          !setRecord?.weight &&
+                                          getTargetWeight()
+                                        ) {
+                                          const targetWeight = parseFloat(
+                                            getTargetWeight()
+                                          );
+                                          if (!isNaN(targetWeight)) {
+                                            handleSetComplete(setNumber, {
+                                              setNumber,
+                                              reps: setRecord?.reps || 0,
+                                              duration: setRecord?.duration,
+                                              weight: targetWeight,
+                                              completed:
+                                                setRecord?.completed || false,
+                                              setType: getSetType(setRecord),
+                                            });
+                                          }
+                                        }
+                                      }}
+                                      className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
+                                    />
+                                  </td>
+                                )}
+
+                                {/* Reps or Duration column */}
+                                <td className="py-3 px-2">
+                                  {isTimeBased ? (
+                                    // Time-based input with timer format
+                                    <input
+                                      type="text"
+                                      inputMode="numeric"
+                                      placeholder={formatSecondsToTime(
+                                        getTargetDuration()
+                                      )}
+                                      value={
+                                        setRecord?.duration
+                                          ? formatSecondsToTime(
+                                              setRecord.duration
+                                            )
+                                          : ""
+                                      }
+                                      onChange={(e) => {
+                                        const seconds = parseTimeToSeconds(
+                                          e.target.value
+                                        );
+                                        handleSetComplete(setNumber, {
+                                          setNumber,
+                                          reps: seconds, // Store in reps for backwards compatibility
+                                          duration: seconds,
                                           weight: setRecord?.weight || 0,
                                           completed:
                                             setRecord?.completed || false,
                                           setType: getSetType(setRecord),
                                         });
-                                      }
-                                    }}
-                                    className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
-                                  />
-                                ) : (
-                                  // Rep-based input
-                                  <input
-                                    type="number"
-                                    inputMode="numeric"
-                                    placeholder={getTargetReps() || "0"}
-                                    value={setRecord?.reps || ""}
-                                    onChange={(e) =>
-                                      handleSetComplete(setNumber, {
-                                        setNumber,
-                                        reps: parseInt(e.target.value) || 0,
-                                        duration: setRecord?.duration,
-                                        weight: setRecord?.weight || 0,
-                                        completed:
-                                          setRecord?.completed || false,
-                                        setType: getSetType(setRecord),
-                                      })
-                                    }
-                                    onFocus={(e) => {
-                                      // If empty and has placeholder, offer to use placeholder value
-                                      if (!setRecord?.reps && getTargetReps()) {
-                                        const targetReps = parseInt(
-                                          getTargetReps()
-                                        );
-                                        if (!isNaN(targetReps)) {
+                                      }}
+                                      onFocus={(e) => {
+                                        // Auto-fill target duration
+                                        if (
+                                          !setRecord?.duration &&
+                                          getTargetDuration()
+                                        ) {
+                                          const targetDuration =
+                                            getTargetDuration();
                                           handleSetComplete(setNumber, {
                                             setNumber,
-                                            reps: targetReps,
-                                            duration: setRecord?.duration,
+                                            reps: targetDuration,
+                                            duration: targetDuration,
                                             weight: setRecord?.weight || 0,
                                             completed:
                                               setRecord?.completed || false,
                                             setType: getSetType(setRecord),
                                           });
                                         }
+                                      }}
+                                      className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
+                                    />
+                                  ) : (
+                                    // Rep-based input
+                                    <input
+                                      type="number"
+                                      inputMode="numeric"
+                                      placeholder={getTargetReps() || "0"}
+                                      value={setRecord?.reps || ""}
+                                      onChange={(e) =>
+                                        handleSetComplete(setNumber, {
+                                          setNumber,
+                                          reps: parseInt(e.target.value) || 0,
+                                          duration: setRecord?.duration,
+                                          weight: setRecord?.weight || 0,
+                                          completed:
+                                            setRecord?.completed || false,
+                                          setType: getSetType(setRecord),
+                                        })
                                       }
+                                      onFocus={(e) => {
+                                        // If empty and has placeholder, offer to use placeholder value
+                                        if (
+                                          !setRecord?.reps &&
+                                          getTargetReps()
+                                        ) {
+                                          const targetReps = parseInt(
+                                            getTargetReps()
+                                          );
+                                          if (!isNaN(targetReps)) {
+                                            handleSetComplete(setNumber, {
+                                              setNumber,
+                                              reps: targetReps,
+                                              duration: setRecord?.duration,
+                                              weight: setRecord?.weight || 0,
+                                              completed:
+                                                setRecord?.completed || false,
+                                              setType: getSetType(setRecord),
+                                            });
+                                          }
+                                        }
+                                      }}
+                                      className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
+                                    />
+                                  )}
+                                </td>
+
+                                <td className="py-3 px-4 text-center">
+                                  <button
+                                    onClick={() => {
+                                      // For time-based: check duration, for rep-based: check reps
+                                      const hasValue = isTimeBased
+                                        ? setRecord?.duration &&
+                                          setRecord.duration > 0
+                                        : setRecord?.reps && setRecord.reps > 0;
+
+                                      if (!isCompleted && !hasValue) {
+                                        return;
+                                      }
+
+                                      handleSetComplete(setNumber, {
+                                        setNumber,
+                                        completed: !isCompleted,
+                                        reps: setRecord?.reps || 0,
+                                        duration: setRecord?.duration,
+                                        weight: setRecord?.weight || 0,
+                                        setType: getSetType(setRecord),
+                                      });
                                     }}
-                                    className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
-                                  />
-                                )}
-                              </td>
-
-                              <td className="py-3 px-4 text-center">
-                                <button
-                                  onClick={() => {
-                                    // For time-based: check duration, for rep-based: check reps
-                                    const hasValue = isTimeBased
-                                      ? setRecord?.duration &&
-                                        setRecord.duration > 0
-                                      : setRecord?.reps && setRecord.reps > 0;
-
-                                    if (!isCompleted && !hasValue) {
-                                      return;
+                                    disabled={
+                                      !isCompleted &&
+                                      (isTimeBased
+                                        ? !setRecord?.duration ||
+                                          setRecord.duration === 0
+                                        : !setRecord?.reps ||
+                                          setRecord.reps === 0)
                                     }
-
-                                    handleSetComplete(setNumber, {
-                                      setNumber,
-                                      completed: !isCompleted,
-                                      reps: setRecord?.reps || 0,
-                                      duration: setRecord?.duration,
-                                      weight: setRecord?.weight || 0,
-                                      setType: getSetType(setRecord),
-                                    });
-                                  }}
-                                  disabled={
-                                    !isCompleted &&
-                                    (isTimeBased
-                                      ? !setRecord?.duration ||
-                                        setRecord.duration === 0
-                                      : !setRecord?.reps ||
-                                        setRecord.reps === 0)
-                                  }
-                                  className={`
+                                    className={`
                         w-11 h-11 rounded-lg flex items-center justify-center transition-colors
                         ${
                           isCompleted
@@ -770,82 +780,88 @@ export default function ExerciseCard({
                             : "bg-[#1f232b] text-gray-300 hover:bg-[#2a2f3a] cursor-pointer"
                         }
                       `}
-                                >
-                                  {isCompleted && <Check className="w-5 h-5" />}
-                                </button>
-                              </td>
-                            </tr>
-                            {showPlates && !isTimeBased && (
-                              <tr className="border-b border-[#1f2230]">
-                                <td colSpan={4} className="px-4 pb-3">
-                                  {(() => {
-                                    const setWeight =
-                                      setRecord?.weight && setRecord.weight > 0
-                                        ? setRecord.weight
-                                        : parseFloat(getTargetWeight());
-                                    if (
-                                      !setWeight ||
-                                      isNaN(setWeight) ||
-                                      setWeight <= 0
-                                    ) {
-                                      return (
-                                        <div className="rounded-lg border border-[#242432] bg-[#101218] px-3 py-2 text-sm text-gray-400">
-                                          Enter weight to see plate breakdown.
-                                        </div>
-                                      );
-                                    }
-                                    const result = calculatePlates(
-                                      setWeight,
-                                      getPlateConfiguration(),
-                                      getBarbellWeight()
-                                    );
-                                    const chips = result.plates.flatMap(
-                                      (plate) =>
-                                        Array.from(
-                                          { length: plate.count },
-                                          () => plate.weight
-                                        )
-                                    );
-                                    return (
-                                      <div className="rounded-lg border border-[#242432] bg-[#101218] px-3 py-2">
-                                        <div className="flex items-center justify-between text-xs text-gray-500 uppercase tracking-[0.2em] mb-2">
-                                          <span>Plate Math (per side)</span>
-                                          <span className="normal-case tracking-normal text-gray-500">
-                                            {formatPlateResult(result)}
-                                          </span>
-                                        </div>
-                                        {!result.exact && (
-                                          <div className="mb-2 rounded-md border border-[#3a2a1f] bg-[#1f1712] px-2 py-1 text-xs text-orange-200">
-                                            Not possible with your current
-                                            plates.
-                                          </div>
-                                        )}
-                                        <div className="flex flex-wrap gap-2">
-                                          {chips.length > 0 ? (
-                                            chips.map((plateWeight, index) => (
-                                              <span
-                                                key={`${setNumber}-${plateWeight}-${index}`}
-                                                className="px-3 py-2 min-h-[44px] rounded-lg bg-[#141823] border border-[#2a2f3a] text-sm font-semibold text-gray-200"
-                                              >
-                                                {plateWeight}
-                                              </span>
-                                            ))
-                                          ) : (
-                                            <span className="text-sm text-gray-400">
-                                              Bar only ({result.barbellWeight}{" "}
-                                              lbs)
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    );
-                                  })()}
+                                  >
+                                    {isCompleted && (
+                                      <Check className="w-5 h-5" />
+                                    )}
+                                  </button>
                                 </td>
                               </tr>
-                            )}
-                          </tbody>
-                        </table>
-                      </SwipeableRow>
+                              {showPlates && !isTimeBased && (
+                                <tr className="border-b border-[#1f2230]">
+                                  <td colSpan={4} className="px-4 pb-3">
+                                    {(() => {
+                                      const setWeight =
+                                        setRecord?.weight &&
+                                        setRecord.weight > 0
+                                          ? setRecord.weight
+                                          : parseFloat(getTargetWeight());
+                                      if (
+                                        !setWeight ||
+                                        isNaN(setWeight) ||
+                                        setWeight <= 0
+                                      ) {
+                                        return (
+                                          <div className="rounded-lg border border-[#242432] bg-[#101218] px-3 py-2 text-sm text-gray-400">
+                                            Enter weight to see plate breakdown.
+                                          </div>
+                                        );
+                                      }
+                                      const result = calculatePlates(
+                                        setWeight,
+                                        getPlateConfiguration(),
+                                        getBarbellWeight()
+                                      );
+                                      const chips = result.plates.flatMap(
+                                        (plate) =>
+                                          Array.from(
+                                            { length: plate.count },
+                                            () => plate.weight
+                                          )
+                                      );
+                                      return (
+                                        <div className="rounded-lg border border-[#242432] bg-[#101218] px-3 py-2">
+                                          <div className="flex items-center justify-between text-xs text-gray-500 uppercase tracking-[0.2em] mb-2">
+                                            <span>Plate Math (per side)</span>
+                                            <span className="normal-case tracking-normal text-gray-500">
+                                              {formatPlateResult(result)}
+                                            </span>
+                                          </div>
+                                          {!result.exact && (
+                                            <div className="mb-2 rounded-md border border-[#3a2a1f] bg-[#1f1712] px-2 py-1 text-xs text-orange-200">
+                                              Not possible with your current
+                                              plates.
+                                            </div>
+                                          )}
+                                          <div className="flex flex-wrap gap-2">
+                                            {chips.length > 0 ? (
+                                              chips.map(
+                                                (plateWeight, index) => (
+                                                  <span
+                                                    key={`${setNumber}-${plateWeight}-${index}`}
+                                                    className="px-3 py-2 min-h-[44px] rounded-lg bg-[#141823] border border-[#2a2f3a] text-sm font-semibold text-gray-200"
+                                                  >
+                                                    {plateWeight}
+                                                  </span>
+                                                )
+                                              )
+                                            ) : (
+                                              <span className="text-sm text-gray-400">
+                                                Bar only ({result.barbellWeight}{" "}
+                                                lbs)
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </SwipeableRow>
+                      </div>
                     </td>
                   </tr>
                 );
