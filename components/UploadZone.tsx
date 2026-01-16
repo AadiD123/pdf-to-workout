@@ -382,7 +382,7 @@ export default function UploadZone({
                 disabled={!goalInput.trim() || isLoading}
                 className="w-full min-h-[48px] bg-[#c6ff5e] hover:bg-[#b6f54e] disabled:bg-[#3a3a48] disabled:text-gray-400 disabled:cursor-not-allowed text-black font-semibold py-3 px-8 rounded-xl transition-colors shadow-sm"
               >
-                Generate Weekly Plan
+                Build My Engine
               </button>
             </div>
           )}

@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, ReactNode } from "react";
 import { useDialog } from "@/components/DialogProvider";
 import { useAuth } from "@/components/AuthProvider";
+import { useOtpSignIn } from "@/components/OtpSignInProvider";
 import {
   Check,
   X,
@@ -135,12 +136,8 @@ export default function ExerciseCard({
   onRestTimerActiveChange,
 }: ExerciseCardProps) {
   const { alert, confirm, prompt } = useDialog();
-  const {
-    user,
-    isLoading: authLoading,
-    signInWithEmailOtp,
-    getAccessToken,
-  } = useAuth();
+  const { user, isLoading: authLoading, getAccessToken } = useAuth();
+  const { requestOtpSignIn } = useOtpSignIn();
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(exercise.name);
   const [shouldAutoStartTimer, setShouldAutoStartTimer] = useState(false);
@@ -296,16 +293,7 @@ export default function ExerciseCard({
     );
 
     if (shouldLogin) {
-      const email = await prompt("Enter your email to get a sign-in code.", {
-        title: "Email sign-in",
-        confirmLabel: "Send code",
-        cancelLabel: "Cancel",
-        placeholder: "you@example.com",
-      });
-      if (email) {
-        await signInWithEmailOtp(email);
-        await alert("Check your email for the sign-in code.");
-      }
+      return await requestOtpSignIn();
     }
 
     return false;

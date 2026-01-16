@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useWorkout } from "@/hooks/useWorkout";
 import { useDialog } from "@/components/DialogProvider";
 import { useAuth } from "@/components/AuthProvider";
+import { useOtpSignIn } from "@/components/OtpSignInProvider";
 import UploadZone from "@/components/UploadZone";
 import WorkoutTracker from "@/components/WorkoutTracker";
 import ProgressView from "@/components/ProgressView";
@@ -16,12 +17,8 @@ import { WorkoutPlan } from "@/types/workout";
 
 export default function Home() {
   const { confirm, alert, prompt } = useDialog();
-  const {
-    user,
-    isLoading: authLoading,
-    signInWithEmailOtp,
-    getAccessToken,
-  } = useAuth();
+  const { user, isLoading: authLoading, getAccessToken } = useAuth();
+  const { requestOtpSignIn } = useOtpSignIn();
   const {
     workoutPlan,
     allWorkoutPlans,
@@ -110,16 +107,7 @@ export default function Home() {
     );
 
     if (shouldLogin) {
-      const email = await prompt("Enter your email to get a sign-in code.", {
-        title: "Email sign-in",
-        confirmLabel: "Send code",
-        cancelLabel: "Cancel",
-        placeholder: "you@example.com",
-      });
-      if (email) {
-        await signInWithEmailOtp(email);
-        await alert("Check your email for the sign-in code.");
-      }
+      return await requestOtpSignIn();
     }
 
     return false;
@@ -441,11 +429,16 @@ export default function Home() {
                     </button>
                   )}
                   <Dumbbell className="w-8 h-8 text-[#c6ff5e]" />
-                  <h1 className="text-2xl font-extrabold uppercase tracking-tight text-gray-100">
-                    {allWorkoutPlans.length > 0
-                      ? "Upload New Plan"
-                      : "LiftLeap"}
-                  </h1>
+                  <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-extrabold uppercase tracking-tight text-gray-100">
+                      {allWorkoutPlans.length > 0
+                        ? "Upload New Plan"
+                        : "LiftLeap"}
+                    </h1>
+                    <span className="px-2 py-1 text-[10px] uppercase tracking-[0.2em] rounded-full border border-[#2a3a2b] bg-[#1a2216] text-[#c6ff5e]">
+                      Beta
+                    </span>
+                  </div>
                   <div className="ml-auto flex items-center gap-2">
                     <button
                       onClick={() => {
@@ -469,18 +462,7 @@ export default function Home() {
                     ) : (
                       <button
                         onClick={async () => {
-                          const email = await prompt(
-                            "Enter your email to get a sign-in code.",
-                            {
-                              title: "Email sign-in",
-                              confirmLabel: "Send code",
-                              cancelLabel: "Cancel",
-                              placeholder: "you@example.com",
-                            }
-                          );
-                          if (!email) return;
-                          await signInWithEmailOtp(email);
-                          await alert("Check your email for the sign-in code.");
+                          await requestOtpSignIn();
                         }}
                         className="min-h-[40px] px-4 rounded-lg bg-[#1f232b] border border-[#242432] text-gray-200 transition-colors text-xs font-semibold hover:bg-[#2a2f3a]"
                       >
@@ -500,9 +482,9 @@ export default function Home() {
                     Stop Typing. Start Lifting
                   </h2>
                   <p className="text-lg text-gray-400">
-                    Convert any goal, workout plan PDF/image into a
-                    high-performance tracker. No manual data entry, no complex
-                    setup—just lift
+                    Convert any goal, workout PDF, or Reddit gym routine into a
+                    high-performance intelligent tracker. No manual data entry,
+                    no complex setup. Just lift.
                   </p>
                   <p className="mt-2 text-sm text-gray-500">
                     No credit card required to generate workout plans
