@@ -475,21 +475,8 @@ export default function Home() {
             </header>
 
             {/* Main Content */}
-            <main className="px-4 py-8">
-              <div className="flex flex-col items-center justify-center min-h-[calc(100vh-200px)]">
-                <div className="text-center mb-8 max-w-2xl">
-                  <h2 className="text-3xl font-extrabold uppercase tracking-tight text-gray-100 mb-4">
-                    Stop Typing. Start Lifting
-                  </h2>
-                  <p className="text-lg text-gray-400">
-                    Convert any goal, workout PDF, or Reddit gym routine into a
-                    high-performance intelligent tracker. No manual data entry,
-                    no complex setup. Just lift.
-                  </p>
-                  <p className="mt-2 text-sm text-gray-500">
-                    No credit card required to generate workout plans
-                  </p>
-                </div>
+            <main className="h-[calc(100vh-80px)] sm:h-auto sm:min-h-[calc(100vh-100px)] overflow-hidden sm:overflow-visible">
+              <div className="h-full flex flex-col sm:py-12">
                 <UploadZone
                   onUpload={handleUpload}
                   onTextSubmit={handleTextSubmit}
@@ -534,12 +521,26 @@ export default function Home() {
                   isLoading={isUploading}
                   error={uploadError}
                 />
-                <button
-                  onClick={handleBuildManualPlan}
-                  className="mt-6 min-h-[48px] px-6 rounded-xl border border-[#2a2f3a] bg-[#15151c] text-gray-400 font-semibold hover:bg-[#1f232b] hover:text-gray-200 transition-colors"
-                >
-                  Build manually as you go
-                </button>
+                
+                {/* Build Manually Button */}
+                {!isUploading && (
+                  <div className="mt-6 sm:mt-8 mb-4 sm:mb-0 flex flex-col items-center gap-3 px-4">
+                    <div className="flex items-center gap-3 w-full max-w-xs">
+                      <div className="flex-1 h-px bg-[#242432]"></div>
+                      <span className="text-xs uppercase tracking-wider text-gray-500">
+                        or
+                      </span>
+                      <div className="flex-1 h-px bg-[#242432]"></div>
+                    </div>
+                    <button
+                      onClick={handleBuildManualPlan}
+                      disabled={isUploading}
+                      className="min-h-[48px] px-6 rounded-xl border border-[#2a2f3a] bg-[#15151c] text-gray-300 font-semibold hover:bg-[#1f232b] hover:text-gray-100 hover:border-[#3a3f4a] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                    >
+                      Build manually as you go
+                    </button>
+                  </div>
+                )}
               </div>
             </main>
           </motion.div>
