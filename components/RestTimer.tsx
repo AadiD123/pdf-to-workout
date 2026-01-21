@@ -11,6 +11,9 @@ interface RestTimerProps {
   onClose?: () => void; // Callback when timer is closed
   inline?: boolean; // Whether to show inline (in header) vs floating
   minimal?: boolean; // Minimal design for top-left placement
+  restoredTimeLeft?: number; // Restored time left in seconds
+  restoredIsRunning?: boolean; // Whether timer was running when saved
+  onTimerStateChange?: (timeLeft: number, isRunning: boolean) => void; // Callback for state changes
 }
 
 export default function RestTimer({
@@ -21,6 +24,9 @@ export default function RestTimer({
   onClose,
   inline = false,
   minimal = false,
+  restoredTimeLeft,
+  restoredIsRunning = false,
+  onTimerStateChange,
 }: RestTimerProps) {
   const [isOpen, setIsOpen] = useState(inline); // Always open if inline
   const [isRunning, setIsRunning] = useState(false);
@@ -28,6 +34,7 @@ export default function RestTimer({
   const [targetTime, setTargetTime] = useState(90);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [restoredStateApplied, setRestoredStateApplied] = useState(false);
 
   // Parse rest time from string like "90 sec", "2 min", "60s", "1:30"
   const parseRestTime = (restTimeStr: string): number => {
@@ -56,14 +63,24 @@ export default function RestTimer({
     return 90;
   };
 
+  // Restore timer state if provided
+  useEffect(() => {
+    if (restoredTimeLeft !== undefined && !restoredStateApplied) {
+      setTimeLeft(restoredTimeLeft);
+      setTargetTime(restoredTimeLeft);
+      setIsRunning(restoredIsRunning);
+      setRestoredStateApplied(true);
+    }
+  }, [restoredTimeLeft, restoredIsRunning, restoredStateApplied]);
+
   // Initialize timer with default rest time
   useEffect(() => {
-    if (defaultRestTime) {
+    if (defaultRestTime && !restoredStateApplied) {
       const seconds = parseRestTime(defaultRestTime);
       setTargetTime(seconds);
       setTimeLeft(seconds);
     }
-  }, [defaultRestTime]);
+  }, [defaultRestTime, restoredStateApplied]);
 
   // Auto-start timer when triggered
   useEffect(() => {
@@ -89,6 +106,13 @@ export default function RestTimer({
       setIsOpen(true);
     }
   }, [inline]);
+
+  // Notify parent of timer state changes
+  useEffect(() => {
+    if (onTimerStateChange) {
+      onTimerStateChange(timeLeft, isRunning);
+    }
+  }, [timeLeft, isRunning, onTimerStateChange]);
 
   const handleClose = () => {
     setIsOpen(false);

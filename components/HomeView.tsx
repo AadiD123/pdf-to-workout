@@ -14,6 +14,7 @@ import {
   Trash2,
   Pencil,
   Check,
+  LogOut,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDialog } from "@/components/DialogProvider";
@@ -33,7 +34,7 @@ interface HomeViewProps {
   onAddDay: (dayName: string, isRestDay: boolean) => void;
   onReorderDays: (dayOrder: string[]) => void;
   onDeleteDay: (dayId: string) => void;
-  onDeleteAllData: () => void;
+  onLogOut: () => void;
 }
 
 export default function HomeView({
@@ -44,7 +45,7 @@ export default function HomeView({
   onAddDay,
   onReorderDays,
   onDeleteDay,
-  onDeleteAllData,
+  onLogOut,
 }: HomeViewProps) {
   const { confirm, alert } = useDialog();
   const [showPlateSettings, setShowPlateSettings] = useState(false);
@@ -119,12 +120,12 @@ export default function HomeView({
       {/* Header */}
       <div className="bg-[#15151c]/80 backdrop-blur border-b border-[#242432] p-4">
         <div className="flex items-center gap-3 mb-3">
-          <Dumbbell className="w-8 h-8 text-[#c6ff5e]" />
-          <div className="flex-1">
-            <h1 className="text-2xl font-extrabold uppercase tracking-tight text-gray-100">
+          <Dumbbell className="w-8 h-8 text-[#c6ff5e] flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-extrabold uppercase tracking-tight text-gray-100 break-words">
               {workoutPlan.name}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 truncate">
               Created {format(new Date(workoutPlan.uploadedAt), "MMM d, yyyy")}
             </p>
           </div>
@@ -167,21 +168,13 @@ export default function HomeView({
                 </button>
                 <button
                   onClick={() => {
-                    (async () => {
-                      if (
-                        await confirm(
-                          "Delete all user data? This removes all plans, history, and settings."
-                        )
-                      ) {
-                        onDeleteAllData();
-                      }
-                      setShowMenu(false);
-                    })();
+                    onLogOut();
+                    setShowMenu(false);
                   }}
-                  className="w-full text-left px-4 py-2 text-sm text-red-300 hover:bg-red-500/10 flex items-center gap-2"
+                  className="w-full text-left px-4 py-2 text-sm text-gray-200 hover:bg-[#1f232b] flex items-center gap-2"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  Delete All User Data
+                  <LogOut className="w-4 h-4 text-gray-400" />
+                  Log Out
                 </button>
               </div>
             )}
@@ -245,21 +238,21 @@ export default function HomeView({
                 )}
               </div>
 
-              <div className="flex-1 text-left">
-                <h3 className="text-xl font-extrabold uppercase tracking-tight text-gray-100 mb-1">
+              <div className="flex-1 text-left min-w-0">
+                <h3 className="text-xl font-extrabold uppercase tracking-tight text-gray-100 mb-1 break-words">
                   {suggestedDay.name}
                 </h3>
-                <p className="text-gray-300 text-sm mb-2">
+                <p className="text-gray-300 text-sm mb-2 break-words">
                   {suggestionMessage}
                 </p>
                 {!suggestedDay.isRestDay && (
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-gray-500 text-xs truncate">
                     {suggestedDay.exercises.length} exercise
                     {suggestedDay.exercises.length !== 1 ? "s" : ""}
                   </p>
                 )}
                 {suggestedDay.isRestDay && (
-                  <p className="text-gray-500 text-xs">
+                  <p className="text-gray-500 text-xs truncate">
                     Recovery day • No exercises
                   </p>
                 )}
@@ -359,24 +352,24 @@ export default function HomeView({
                     )}
                   </div>
 
-                  <div className="flex-1 text-left">
+                  <div className="flex-1 text-left min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-gray-100">
+                      <h3 className="font-semibold text-gray-100 truncate">
                         {day.name}
                       </h3>
                       {isSuggested && (
-                        <span className="inline-flex items-center text-[10px] uppercase tracking-[0.15em] whitespace-nowrap text-[#c6ff5e] border border-[#2a3a2b] px-2 py-1 rounded-full leading-none">
+                        <span className="inline-flex items-center text-[10px] uppercase tracking-[0.15em] whitespace-nowrap text-[#c6ff5e] border border-[#2a3a2b] px-2 py-1 rounded-full leading-none flex-shrink-0">
                           Up next
                         </span>
                       )}
                     </div>
                     {day.isRestDay ? (
-                      <p className="text-sm text-[#c6ff5e]">
+                      <p className="text-sm text-[#c6ff5e] truncate">
                         Recovery day • {daySessionCount} time
                         {daySessionCount !== 1 ? "s" : ""} completed
                       </p>
                     ) : (
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-gray-400 truncate">
                         {day.exercises.length} exercise
                         {day.exercises.length !== 1 ? "s" : ""} •{" "}
                         {daySessionCount} session

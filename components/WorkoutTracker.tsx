@@ -10,10 +10,19 @@ import { AnimatePresence, motion } from "framer-motion";
 import { triggerHaptic } from "@/lib/haptics";
 import { useExerciseCatalog } from "@/hooks/useExerciseCatalog";
 
+interface RestTimerState {
+  exerciseId: string;
+  timeLeft: number;
+  targetTime: number;
+  isRunning: boolean;
+  startedAt: number;
+}
+
 interface WorkoutTrackerProps {
   workoutPlan: WorkoutPlan;
   selectedDayId: string;
   workoutStartTime?: number; // Timestamp when workout started
+  restoredRestTimer?: RestTimerState; // Restored rest timer state
   onUpdateSet: (
     exerciseId: string,
     setNumber: number,
@@ -29,6 +38,7 @@ interface WorkoutTrackerProps {
   onBackToHome: () => void;
   onDiscardWorkout: () => void;
   onViewProgress: () => void;
+  onRestTimerChange?: (state: RestTimerState | undefined) => void;
   onAddExercise?: (dayId: string, exercise: any) => void;
   onDeleteExercise?: (dayId: string, exerciseId: string) => void;
   onAddSet?: (dayId: string, exerciseId: string) => void;
@@ -39,6 +49,7 @@ export default function WorkoutTracker({
   workoutPlan,
   selectedDayId: propSelectedDayId,
   workoutStartTime,
+  restoredRestTimer,
   onUpdateSet,
   onUpdateNotes,
   onUpdateExerciseName,
@@ -50,6 +61,7 @@ export default function WorkoutTracker({
   onBackToHome,
   onDiscardWorkout,
   onViewProgress,
+  onRestTimerChange,
   onAddExercise,
   onDeleteExercise,
   onAddSet,
@@ -78,9 +90,24 @@ export default function WorkoutTracker({
   const [restTimerDuration, setRestTimerDuration] = useState<
     string | undefined
   >(undefined);
+  const [restoredTimerApplied, setRestoredTimerApplied] = useState(false);
+  const [currentRestTimerState, setCurrentRestTimerState] = useState<{
+    timeLeft: number;
+    isRunning: boolean;
+  } | null>(null);
 
   const selectedDay =
     workoutPlan.days.find((d) => d.id === selectedDayId) || workoutPlan.days[0];
+
+  // Restore rest timer state on mount
+  useEffect(() => {
+    if (restoredRestTimer && !restoredTimerApplied) {
+      setActiveRestTimer(restoredRestTimer.exerciseId);
+      setRestTimerDuration(restoredRestTimer.targetTime.toString());
+      setRestTimerAutoStart(restoredRestTimer.isRunning);
+      setRestoredTimerApplied(true);
+    }
+  }, [restoredRestTimer, restoredTimerApplied]);
 
   // Update workout duration timer
   useEffect(() => {
@@ -91,6 +118,27 @@ export default function WorkoutTracker({
       return () => clearInterval(interval);
     }
   }, [workoutStartTime]);
+
+  // Notify parent of rest timer changes
+  useEffect(() => {
+    if (onRestTimerChange) {
+      if (activeRestTimer && currentRestTimerState) {
+        onRestTimerChange({
+          exerciseId: activeRestTimer,
+          timeLeft: currentRestTimerState.timeLeft,
+          targetTime: parseInt(restTimerDuration || "90"),
+          isRunning: currentRestTimerState.isRunning,
+          startedAt: Date.now(),
+        });
+      } else {
+        onRestTimerChange(undefined);
+      }
+    }
+  }, [activeRestTimer, currentRestTimerState, restTimerDuration, onRestTimerChange]);
+
+  const handleRestTimerStateChange = (timeLeft: number, isRunning: boolean) => {
+    setCurrentRestTimerState({ timeLeft, isRunning });
+  };
 
   const formatDuration = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600);
@@ -106,21 +154,26 @@ export default function WorkoutTracker({
   const completedExercisesCount =
     selectedDay?.exercises.filter((ex) => ex.completed).length || 0;
   const totalExercises = selectedDay?.exercises.length || 0;
-  const overallProgress =
-    totalExercises > 0 ? (completedExercisesCount / totalExercises) * 100 : 0;
+  
+  // Calculate progress based on sets completed across all exercises
+  const totalSets = selectedDay?.exercises.reduce((sum, ex) => sum + ex.sets, 0) || 0;
+  const completedSets = selectedDay?.exercises.reduce((sum, ex) => {
+    return sum + ex.completedSets.filter((set) => set.completed).length;
+  }, 0) || 0;
+  const overallProgress = totalSets > 0 ? (completedSets / totalSets) * 100 : 0;
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [levelUpMessage] = useState("Level Up!");
   const prevCompletedRef = useRef(0);
 
   useEffect(() => {
     const previousCount = prevCompletedRef.current;
-    prevCompletedRef.current = completedExercisesCount;
-    if (completedExercisesCount > previousCount) {
+    prevCompletedRef.current = completedSets;
+    if (completedSets > previousCount) {
       setShowLevelUp(true);
       const timeout = setTimeout(() => setShowLevelUp(false), 2400);
       return () => clearTimeout(timeout);
     }
-  }, [completedExercisesCount]);
+  }, [completedSets]);
 
   const handleDiscardWorkout = async () => {
     await onDiscardWorkout();
@@ -229,35 +282,49 @@ export default function WorkoutTracker({
                   defaultRestTime={restTimerDuration}
                   autoStart={restTimerAutoStart}
                   onAutoStartComplete={() => setRestTimerAutoStart(false)}
-                  onClose={() => setActiveRestTimer(null)}
+                  onClose={() => {
+                    setActiveRestTimer(null);
+                    setCurrentRestTimerState(null);
+                  }}
                   inline={true}
                   minimal={true}
+                  restoredTimeLeft={
+                    restoredRestTimer?.exerciseId === activeRestTimer
+                      ? restoredRestTimer.timeLeft
+                      : undefined
+                  }
+                  restoredIsRunning={
+                    restoredRestTimer?.exerciseId === activeRestTimer
+                      ? restoredRestTimer.isRunning
+                      : false
+                  }
+                  onTimerStateChange={handleRestTimerStateChange}
                 />
               </div>
             )}
           </div>
         )}
 
-        {/* Title and Menu Row */}
-        <div className="flex items-center justify-between gap-4 px-4 pb-3">
-          {/* Title - Can wrap */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <button
-              onClick={onBackToHome}
-              className="min-w-[40px] min-h-[40px] rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] flex items-center justify-center"
-              title="Minimize workout"
-            >
-              <ChevronDown className="w-5 h-5 text-gray-300" />
-            </button>
-            <div>
-              <h1 className="text-lg font-extrabold uppercase tracking-tight text-gray-100 line-clamp-2">
-                {workoutPlan.name}
-              </h1>
-              <p className="text-xs text-gray-500">
-                {format(new Date(workoutPlan.uploadedAt), "MMM d, yyyy")}
-              </p>
+          {/* Title and Menu Row */}
+          <div className="flex items-center justify-between gap-4 px-4 pb-3">
+            {/* Title - Can wrap */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <button
+                onClick={onBackToHome}
+                className="min-w-[40px] min-h-[40px] rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] flex items-center justify-center flex-shrink-0"
+                title="Minimize workout"
+              >
+                <ChevronDown className="w-5 h-5 text-gray-300" />
+              </button>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-extrabold uppercase tracking-tight text-gray-100 line-clamp-2 break-words">
+                  {workoutPlan.name}
+                </h1>
+                <p className="text-xs text-gray-500 truncate">
+                  {format(new Date(workoutPlan.uploadedAt), "MMM d, yyyy")}
+                </p>
+              </div>
             </div>
-          </div>
 
           {/* Menu */}
           <div className="relative flex-shrink-0">
@@ -303,7 +370,7 @@ export default function WorkoutTracker({
 
         {/* Workout Day Title */}
         <div className="px-4 pb-3 pt-1">
-          <h2 className="text-lg font-semibold text-gray-300">
+          <h2 className="text-lg font-semibold text-gray-300 break-words">
             {selectedDay?.name}
           </h2>
         </div>

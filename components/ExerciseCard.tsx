@@ -160,6 +160,11 @@ export default function ExerciseCard({
   } | null>(null);
   const setTypeMenuRef = useRef<HTMLDivElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const [editingInput, setEditingInput] = useState<{
+    setNumber: number;
+    field: "weight" | "reps";
+  } | null>(null);
+  const lastTapTime = useRef<{ [key: string]: number }>({});
 
   useEffect(() => {
     if (isEditingName && nameInputRef.current) {
@@ -383,6 +388,70 @@ export default function ExerciseCard({
 
     // Call the parent's onUpdateSet
     onUpdateSet(setNumber, updates);
+  };
+
+  const handleInputTap = (setNumber: number, field: "weight" | "reps") => {
+    const key = `${setNumber}-${field}`;
+    const now = Date.now();
+    const lastTap = lastTapTime.current[key] || 0;
+    const isDoubleTap = now - lastTap < 300; // 300ms threshold for double tap
+
+    lastTapTime.current[key] = now;
+
+    if (isDoubleTap) {
+      // Double tap: enter edit mode
+      setEditingInput({ setNumber, field });
+    } else {
+      // Single tap: activate placeholders
+      const setRecord = getSetRecord(setNumber);
+      
+      if (field === "weight") {
+        const targetWeight = getTargetWeight();
+        if (!setRecord?.weight && targetWeight) {
+          const weight = parseFloat(targetWeight);
+          if (!isNaN(weight)) {
+            handleSetComplete(setNumber, {
+              setNumber,
+              reps: setRecord?.reps || 0,
+              duration: setRecord?.duration,
+              weight: weight,
+              completed: setRecord?.completed || false,
+              setType: getSetType(setRecord),
+            });
+          }
+        }
+      } else {
+        // reps field
+        if (isTimeBased) {
+          const targetDuration = getTargetDuration();
+          if (!setRecord?.duration && targetDuration) {
+            handleSetComplete(setNumber, {
+              setNumber,
+              reps: targetDuration,
+              duration: targetDuration,
+              weight: setRecord?.weight || 0,
+              completed: setRecord?.completed || false,
+              setType: getSetType(setRecord),
+            });
+          }
+        } else {
+          const targetReps = getTargetReps();
+          if (!setRecord?.reps && targetReps) {
+            const reps = parseInt(targetReps);
+            if (!isNaN(reps)) {
+              handleSetComplete(setNumber, {
+                setNumber,
+                reps: reps,
+                duration: setRecord?.duration,
+                weight: setRecord?.weight || 0,
+                completed: setRecord?.completed || false,
+                setType: getSetType(setRecord),
+              });
+            }
+          }
+        }
+      }
+    }
   };
 
   return (
@@ -611,26 +680,22 @@ export default function ExerciseCard({
                                           setType: getSetType(setRecord),
                                         })
                                       }
+                                      onClick={() => handleInputTap(setNumber, "weight")}
                                       onFocus={(e) => {
-                                        // If empty and has placeholder, offer to use placeholder value
+                                        // Only auto-focus on double tap (edit mode)
                                         if (
-                                          !setRecord?.weight &&
-                                          getTargetWeight()
+                                          editingInput?.setNumber === setNumber &&
+                                          editingInput?.field === "weight"
                                         ) {
-                                          const targetWeight = parseFloat(
-                                            getTargetWeight()
-                                          );
-                                          if (!isNaN(targetWeight)) {
-                                            handleSetComplete(setNumber, {
-                                              setNumber,
-                                              reps: setRecord?.reps || 0,
-                                              duration: setRecord?.duration,
-                                              weight: targetWeight,
-                                              completed:
-                                                setRecord?.completed || false,
-                                              setType: getSetType(setRecord),
-                                            });
-                                          }
+                                          e.target.select();
+                                        }
+                                      }}
+                                      onBlur={() => {
+                                        if (
+                                          editingInput?.setNumber === setNumber &&
+                                          editingInput?.field === "weight"
+                                        ) {
+                                          setEditingInput(null);
                                         }
                                       }}
                                       className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
@@ -669,23 +734,22 @@ export default function ExerciseCard({
                                           setType: getSetType(setRecord),
                                         });
                                       }}
+                                      onClick={() => handleInputTap(setNumber, "reps")}
                                       onFocus={(e) => {
-                                        // Auto-fill target duration
+                                        // Only auto-focus on double tap (edit mode)
                                         if (
-                                          !setRecord?.duration &&
-                                          getTargetDuration()
+                                          editingInput?.setNumber === setNumber &&
+                                          editingInput?.field === "reps"
                                         ) {
-                                          const targetDuration =
-                                            getTargetDuration();
-                                          handleSetComplete(setNumber, {
-                                            setNumber,
-                                            reps: targetDuration,
-                                            duration: targetDuration,
-                                            weight: setRecord?.weight || 0,
-                                            completed:
-                                              setRecord?.completed || false,
-                                            setType: getSetType(setRecord),
-                                          });
+                                          e.target.select();
+                                        }
+                                      }}
+                                      onBlur={() => {
+                                        if (
+                                          editingInput?.setNumber === setNumber &&
+                                          editingInput?.field === "reps"
+                                        ) {
+                                          setEditingInput(null);
                                         }
                                       }}
                                       className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
@@ -708,26 +772,22 @@ export default function ExerciseCard({
                                           setType: getSetType(setRecord),
                                         })
                                       }
+                                      onClick={() => handleInputTap(setNumber, "reps")}
                                       onFocus={(e) => {
-                                        // If empty and has placeholder, offer to use placeholder value
+                                        // Only auto-focus on double tap (edit mode)
                                         if (
-                                          !setRecord?.reps &&
-                                          getTargetReps()
+                                          editingInput?.setNumber === setNumber &&
+                                          editingInput?.field === "reps"
                                         ) {
-                                          const targetReps = parseInt(
-                                            getTargetReps()
-                                          );
-                                          if (!isNaN(targetReps)) {
-                                            handleSetComplete(setNumber, {
-                                              setNumber,
-                                              reps: targetReps,
-                                              duration: setRecord?.duration,
-                                              weight: setRecord?.weight || 0,
-                                              completed:
-                                                setRecord?.completed || false,
-                                              setType: getSetType(setRecord),
-                                            });
-                                          }
+                                          e.target.select();
+                                        }
+                                      }}
+                                      onBlur={() => {
+                                        if (
+                                          editingInput?.setNumber === setNumber &&
+                                          editingInput?.field === "reps"
+                                        ) {
+                                          setEditingInput(null);
                                         }
                                       }}
                                       className="w-full min-h-[44px] text-center py-2 px-2 text-base font-semibold bg-[#0f1218] border border-[#2a2f3a] rounded-lg text-gray-100 focus:outline-none focus:ring-2 focus:ring-[#c6ff5e] focus:border-transparent placeholder:text-gray-500"
@@ -738,16 +798,46 @@ export default function ExerciseCard({
                                 <td className="py-3 px-4 text-center">
                                   <button
                                     onClick={() => {
-                                      // For time-based: check duration, for rep-based: check reps
-                                      const hasValue = isTimeBased
-                                        ? setRecord?.duration &&
-                                          setRecord.duration > 0
+                                      // Check if we have actual values or placeholders to use
+                                      const hasActualValue = isTimeBased
+                                        ? setRecord?.duration && setRecord.duration > 0
                                         : setRecord?.reps && setRecord.reps > 0;
+                                      
+                                      const hasPlaceholder = isTimeBased
+                                        ? getTargetDuration() > 0
+                                        : parseInt(getTargetReps() || "0") > 0;
 
-                                      if (!isCompleted && !hasValue) {
+                                      // If not completed and no actual value, use placeholder if available
+                                      if (!isCompleted && !hasActualValue && hasPlaceholder) {
+                                        const updates: Partial<SetRecord> = {
+                                          setNumber,
+                                          completed: true,
+                                          setType: getSetType(setRecord),
+                                        };
+
+                                        if (isTimeBased) {
+                                          const targetDuration = getTargetDuration();
+                                          updates.reps = targetDuration;
+                                          updates.duration = targetDuration;
+                                        } else {
+                                          const targetReps = parseInt(getTargetReps());
+                                          updates.reps = targetReps;
+                                        }
+
+                                        // Use target weight if available
+                                        const targetWeight = parseFloat(getTargetWeight() || "0");
+                                        updates.weight = targetWeight || setRecord?.weight || 0;
+
+                                        handleSetComplete(setNumber, updates);
                                         return;
                                       }
 
+                                      // If no value and no placeholder, do nothing
+                                      if (!isCompleted && !hasActualValue) {
+                                        return;
+                                      }
+
+                                      // Toggle completion
                                       handleSetComplete(setNumber, {
                                         setNumber,
                                         completed: !isCompleted,
@@ -760,10 +850,8 @@ export default function ExerciseCard({
                                     disabled={
                                       !isCompleted &&
                                       (isTimeBased
-                                        ? !setRecord?.duration ||
-                                          setRecord.duration === 0
-                                        : !setRecord?.reps ||
-                                          setRecord.reps === 0)
+                                        ? (!setRecord?.duration || setRecord.duration === 0) && getTargetDuration() === 0
+                                        : (!setRecord?.reps || setRecord.reps === 0) && !getTargetReps())
                                     }
                                     className={`
                         w-11 h-11 rounded-lg flex items-center justify-center transition-colors
@@ -772,9 +860,8 @@ export default function ExerciseCard({
                             ? "bg-[#c6ff5e] text-black hover:bg-[#b6f54e]"
                             : (
                                 isTimeBased
-                                  ? !setRecord?.duration ||
-                                    setRecord.duration === 0
-                                  : !setRecord?.reps || setRecord.reps === 0
+                                  ? (!setRecord?.duration || setRecord.duration === 0) && getTargetDuration() === 0
+                                  : (!setRecord?.reps || setRecord.reps === 0) && !getTargetReps()
                               )
                             ? "bg-[#1a1d24] text-gray-600 cursor-not-allowed"
                             : "bg-[#1f232b] text-gray-300 hover:bg-[#2a2f3a] cursor-pointer"
