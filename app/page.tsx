@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useWorkout } from "@/hooks/useWorkout";
 import { useDialog } from "@/components/DialogProvider";
 import { useAuth } from "@/components/AuthProvider";
@@ -14,10 +14,16 @@ import { pdfToImage } from "@/lib/pdfToImage";
 import { Dumbbell, ArrowLeft, Download } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { WorkoutPlan } from "@/types/workout";
+import {
+  saveActiveWorkoutState,
+  loadActiveWorkoutState,
+  clearActiveWorkoutState,
+  ActiveWorkoutState,
+} from "@/lib/localStorage";
 
 export default function Home() {
   const { confirm, alert, prompt } = useDialog();
-  const { user, isLoading: authLoading, getAccessToken } = useAuth();
+  const { user, isLoading: authLoading, getAccessToken, signOut } = useAuth();
   const { requestOtpSignIn } = useOtpSignIn();
   const {
     workoutPlan,
@@ -60,6 +66,8 @@ export default function Home() {
     useState<WorkoutPlan | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [restTimerState, setRestTimerState] = useState<ActiveWorkoutState['restTimer'] | undefined>(undefined);
+  const [isRestoringWorkout, setIsRestoringWorkout] = useState(false);
 
   const clonePlan = (plan: WorkoutPlan): WorkoutPlan =>
     JSON.parse(JSON.stringify(plan)) as WorkoutPlan;
@@ -258,10 +266,18 @@ export default function Home() {
   };
 
   const handleConfirmStart = () => {
+    const startTime = Date.now();
     setSelectedDayId(pendingDayId);
-    setWorkoutStartTime(Date.now());
+    setWorkoutStartTime(startTime);
     if (workoutPlan) {
       setWorkoutPlanSnapshot(clonePlan(workoutPlan));
+      // Save active workout state
+      saveActiveWorkoutState({
+        planId: workoutPlan.id,
+        dayId: pendingDayId,
+        startTime,
+        workoutPlan: clonePlan(workoutPlan),
+      });
     }
     setView("tracker");
     setShowStartDialog(false);
@@ -278,6 +294,8 @@ export default function Home() {
       setView("home");
       setWorkoutStartTime(undefined);
       setWorkoutPlanSnapshot(null);
+      setRestTimerState(undefined);
+      clearActiveWorkoutState();
       handleResetSession(selectedDayId);
     }
   };
@@ -322,6 +340,12 @@ export default function Home() {
     });
   };
 
+  const handleLogOut = async () => {
+    if (await confirm("Are you sure you want to log out?")) {
+      await signOut();
+    }
+  };
+
   const handleCompleteWorkout = async (dayId: string, notes?: string) => {
     const duration = workoutStartTime
       ? Math.floor((Date.now() - workoutStartTime) / 1000)
@@ -356,6 +380,8 @@ export default function Home() {
 
     setWorkoutStartTime(undefined);
     setWorkoutPlanSnapshot(null);
+    setRestTimerState(undefined);
+    clearActiveWorkoutState();
     setView("home");
   };
 
@@ -380,6 +406,64 @@ export default function Home() {
     setIsIOS(ios);
   }, []);
 
+  // Restore active workout state on mount
+  const restoreWorkoutState = useCallback(async () => {
+    if (workoutLoading || !workoutPlan) return;
+    
+    const activeState = loadActiveWorkoutState();
+    if (activeState && activeState.planId === workoutPlan.id && !isRestoringWorkout) {
+      setIsRestoringWorkout(true);
+      
+      // Restore workout state
+      setSelectedDayId(activeState.dayId);
+      setWorkoutStartTime(activeState.startTime);
+      setWorkoutPlanSnapshot(clonePlan(activeState.workoutPlan));
+      
+      // Use the saved workout plan directly to restore progress
+      await handleReplaceWorkoutPlan(activeState.workoutPlan);
+      
+      // Restore rest timer if it was active
+      if (activeState.restTimer) {
+        const { startedAt, isRunning, timeLeft, targetTime } = activeState.restTimer;
+        if (isRunning) {
+          // Calculate elapsed time since timer was saved
+          const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+          const newTimeLeft = Math.max(0, timeLeft - elapsed);
+          
+          setRestTimerState({
+            ...activeState.restTimer,
+            timeLeft: newTimeLeft,
+            isRunning: newTimeLeft > 0,
+          });
+        } else {
+          setRestTimerState(activeState.restTimer);
+        }
+      }
+      
+      setView("tracker");
+      setIsRestoringWorkout(false);
+    }
+  }, [workoutLoading, workoutPlan?.id, isRestoringWorkout, handleReplaceWorkoutPlan]);
+
+  useEffect(() => {
+    void restoreWorkoutState();
+  }, [restoreWorkoutState]);
+
+  // Persist workout state whenever it changes
+  useEffect(() => {
+    if (!workoutPlan || !workoutStartTime || !selectedDayId) return;
+    
+    const state: ActiveWorkoutState = {
+      planId: workoutPlan.id,
+      dayId: selectedDayId,
+      startTime: workoutStartTime,
+      workoutPlan: clonePlan(workoutPlan),
+      restTimer: restTimerState,
+    };
+    
+    saveActiveWorkoutState(state);
+  }, [workoutPlan, workoutStartTime, selectedDayId, restTimerState]);
+
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
@@ -399,12 +483,14 @@ export default function Home() {
     transition: { duration: 0.2 },
   };
 
-  if (workoutLoading) {
+  if (workoutLoading || isRestoringWorkout) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#101014] text-gray-100">
         <div className="flex flex-col items-center gap-4">
           <Dumbbell className="w-12 h-12 text-[#c6ff5e] animate-pulse" />
-          <p className="text-gray-400">Loading...</p>
+          <p className="text-gray-400">
+            {isRestoringWorkout ? "Restoring your workout..." : "Loading..."}
+          </p>
         </div>
       </div>
     );
@@ -554,7 +640,7 @@ export default function Home() {
               onAddDay={handleAddWorkoutDay}
               onReorderDays={handleReorderDays}
               onDeleteDay={handleDeleteDay}
-              onDeleteAllData={handleDeleteAllData}
+              onLogOut={handleLogOut}
             />
             {workoutStartTime && workoutPlan && (
               <div className="fixed bottom-0 left-0 right-0 z-30">
@@ -606,6 +692,7 @@ export default function Home() {
               workoutPlan={workoutPlan}
               selectedDayId={selectedDayId}
               workoutStartTime={workoutStartTime}
+              restoredRestTimer={restTimerState}
               onUpdateSet={handleUpdateSet}
               onUpdateNotes={handleUpdateNotes}
               onUpdateExerciseName={handleUpdateExerciseName}
@@ -617,6 +704,7 @@ export default function Home() {
               onBackToHome={handleBackToHome}
               onDiscardWorkout={handleDiscardWorkout}
               onViewProgress={() => setView("progress")}
+              onRestTimerChange={setRestTimerState}
               onAddExercise={handleAddExercise}
               onDeleteExercise={handleDeleteExercise}
               onAddSet={handleAddSet}

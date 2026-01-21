@@ -202,26 +202,23 @@ export default function UploadZone({
         <>
           {/* Welcome Message - Desktop */}
           <div className="text-center mb-8 px-4 hidden sm:block">
-            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-100 mb-3">
-              What are we building today?
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-gray-100 mb-3 uppercase">
+              Stop typing, start lifting
             </h2>
             <p className="text-base sm:text-lg text-gray-400 max-w-2xl mx-auto">
-              Describe your fitness goals, upload a workout PDF, or paste your routine
+            Make a science-based workout routine personalized to your needs, or upload your routine and begin tracking
             </p>
           </div>
 
           {/* Mobile: Compact Welcome */}
-          <div className="text-center pt-6 pb-4 px-4 sm:hidden">
+          <div className="text-center pt-6 pb-4 px-4 sm:hidden flex-1 flex flex-col justify-center uppercase">
             <h2 className="text-2xl font-extrabold tracking-tight text-gray-100 mb-2">
-              What are we building?
+              Stop typing, Start lifting
             </h2>
             <p className="text-sm text-gray-400">
-              Describe your goals, upload a PDF, or paste your routine
+              Make a science-based workout routine personalized to your needs, or upload your routine and begin tracking
             </p>
           </div>
-
-          {/* Spacer to push input to bottom on mobile */}
-          <div className="flex-1 min-h-0 sm:hidden"></div>
 
           {/* Chat Input Container */}
           <div className="relative w-full max-w-3xl mx-auto px-4 pb-4 sm:px-0 sm:pb-0">
@@ -238,7 +235,7 @@ export default function UploadZone({
             )}
 
             {/* Main Chat Box */}
-            <div className="bg-[#15151c] rounded-3xl border border-[#242432] shadow-xl overflow-hidden">
+            <div className="bg-[#15151c] rounded-3xl border border-[#242432] shadow-xl overflow-hidden w-full">
               {/* File Preview */}
               {selectedFile && (
                 <div className="px-4 pt-4">

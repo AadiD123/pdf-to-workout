@@ -327,6 +327,49 @@ export function clearAllUserData(): void {
     safeRemoveItem(ACTIVE_PLAN_ID_KEY);
     safeRemoveItem('plate-configuration');
     safeRemoveItem('barbell-weight');
+    safeRemoveItem('active-workout-state');
+  }
+}
+
+// Active workout state management
+export interface ActiveWorkoutState {
+  planId: string;
+  dayId: string;
+  startTime: number;
+  workoutPlan: WorkoutPlan;
+  restTimer?: {
+    exerciseId: string;
+    timeLeft: number;
+    targetTime: number;
+    isRunning: boolean;
+    startedAt: number; // timestamp when timer was started
+  };
+}
+
+export function saveActiveWorkoutState(state: ActiveWorkoutState): void {
+  if (typeof window !== 'undefined') {
+    safeSetItem('active-workout-state', JSON.stringify(state));
+  }
+}
+
+export function loadActiveWorkoutState(): ActiveWorkoutState | null {
+  if (typeof window !== 'undefined') {
+    const data = safeGetItem('active-workout-state');
+    if (data) {
+      try {
+        return JSON.parse(data) as ActiveWorkoutState;
+      } catch (error) {
+        console.error('Error parsing active workout state:', error);
+        return null;
+      }
+    }
+  }
+  return null;
+}
+
+export function clearActiveWorkoutState(): void {
+  if (typeof window !== 'undefined') {
+    safeRemoveItem('active-workout-state');
   }
 }
 

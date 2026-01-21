@@ -177,18 +177,18 @@ export default function ProgressView({
     <div className="min-h-screen bg-[#101014] text-gray-100 pb-8">
       {/* Fixed Header */}
       <div className="sticky top-0 z-10 bg-[#15151c]/80 backdrop-blur border-b border-[#242432]">
-        <div className="flex p-4 justify-between">
-          <div className="flex items-center">
-            <button
-              onClick={onBack}
-              className="min-w-[44px] min-h-[44px] -ml-2 rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors flex items-center justify-center"
-            >
-              <ArrowLeft className="w-6 h-6 text-gray-200" />
-            </button>
-            <h1 className="text-xl font-extrabold uppercase tracking-tight text-gray-100 ml-2">
-              Progress
-            </h1>
-          </div>
+          <div className="flex p-4 justify-between items-center">
+            <div className="flex items-center min-w-0 flex-1 mr-2">
+              <button
+                onClick={onBack}
+                className="min-w-[44px] min-h-[44px] -ml-2 rounded-lg border border-transparent hover:border-[#2a2f3a] hover:bg-[#1a1f27] transition-colors flex items-center justify-center flex-shrink-0"
+              >
+                <ArrowLeft className="w-6 h-6 text-gray-200" />
+              </button>
+              <h1 className="text-xl font-extrabold uppercase tracking-tight text-gray-100 ml-2 truncate">
+                Progress
+              </h1>
+            </div>
 
           <button
             onClick={() => setShowFeedbackForm(true)}
@@ -232,7 +232,7 @@ export default function ProgressView({
                 />
               </div>
             ) : (
-              <h2 className="text-lg font-semibold text-gray-100">
+              <h2 className="text-lg font-semibold text-gray-100 break-words">
                 {workoutPlan.name}
               </h2>
             )}
@@ -290,11 +290,11 @@ export default function ProgressView({
                   }`}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-100">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-100 break-words">
                         {plan.name}
                       </h3>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-gray-500 mt-1 truncate">
                         {plan.sessions.length} workout
                         {plan.sessions.length !== 1 ? "s" : ""} •{" "}
                         {plan.days.length} day
@@ -474,11 +474,11 @@ export default function ProgressView({
                         className="w-full p-4 text-left hover:bg-[#1f232b] transition-colors"
                       >
                         <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="font-semibold text-gray-100">
+                          <div className="flex-1 min-w-0 mr-2">
+                            <p className="font-semibold text-gray-100 break-words">
                               {session.dayName}
                             </p>
-                            <p className="text-xs text-gray-500 mt-0.5">
+                            <p className="text-xs text-gray-500 mt-0.5 truncate">
                               {format(
                                 new Date(session.date),
                                 "EEEE, MMM d, yyyy • h:mm a"
@@ -520,7 +520,7 @@ export default function ProgressView({
                               key={exercise.id}
                               className="bg-[#15151c] border border-[#242432] rounded-lg p-3"
                             >
-                              <h4 className="font-semibold text-gray-100 mb-2">
+                              <h4 className="font-semibold text-gray-100 mb-2 break-words">
                                 {exercise.name}
                               </h4>
 
