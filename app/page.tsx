@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useWorkout } from "@/hooks/useWorkout";
 import { useDialog } from "@/components/DialogProvider";
 import { useAuth } from "@/components/AuthProvider";
@@ -68,6 +68,7 @@ export default function Home() {
   const [isStandalone, setIsStandalone] = useState(false);
   const [restTimerState, setRestTimerState] = useState<ActiveWorkoutState['restTimer'] | undefined>(undefined);
   const [isRestoringWorkout, setIsRestoringWorkout] = useState(false);
+  const restorationAttemptedRef = useRef(false);
 
   const clonePlan = (plan: WorkoutPlan): WorkoutPlan =>
     JSON.parse(JSON.stringify(plan)) as WorkoutPlan;
@@ -407,11 +408,12 @@ export default function Home() {
   }, []);
 
   // Restore active workout state on mount
-  const restoreWorkoutState = useCallback(async () => {
-    if (workoutLoading || !workoutPlan) return;
+  useEffect(() => {
+    if (workoutLoading || !workoutPlan || restorationAttemptedRef.current) return;
     
     const activeState = loadActiveWorkoutState();
-    if (activeState && activeState.planId === workoutPlan.id && !isRestoringWorkout) {
+    if (activeState && activeState.planId === workoutPlan.id) {
+      restorationAttemptedRef.current = true;
       setIsRestoringWorkout(true);
       
       // Restore workout state
@@ -420,34 +422,35 @@ export default function Home() {
       setWorkoutPlanSnapshot(clonePlan(activeState.workoutPlan));
       
       // Use the saved workout plan directly to restore progress
-      await handleReplaceWorkoutPlan(activeState.workoutPlan);
-      
-      // Restore rest timer if it was active
-      if (activeState.restTimer) {
-        const { startedAt, isRunning, timeLeft, targetTime } = activeState.restTimer;
-        if (isRunning) {
-          // Calculate elapsed time since timer was saved
-          const elapsed = Math.floor((Date.now() - startedAt) / 1000);
-          const newTimeLeft = Math.max(0, timeLeft - elapsed);
-          
-          setRestTimerState({
-            ...activeState.restTimer,
-            timeLeft: newTimeLeft,
-            isRunning: newTimeLeft > 0,
-          });
-        } else {
-          setRestTimerState(activeState.restTimer);
+      handleReplaceWorkoutPlan(activeState.workoutPlan).then(() => {
+        // Restore rest timer if it was active
+        if (activeState.restTimer) {
+          const { startedAt, isRunning, timeLeft, targetTime } = activeState.restTimer;
+          if (isRunning) {
+            // Calculate elapsed time since timer was saved
+            const elapsed = Math.floor((Date.now() - startedAt) / 1000);
+            const newTimeLeft = Math.max(0, timeLeft - elapsed);
+            
+            setRestTimerState({
+              ...activeState.restTimer,
+              timeLeft: newTimeLeft,
+              isRunning: newTimeLeft > 0,
+            });
+          } else {
+            setRestTimerState(activeState.restTimer);
+          }
         }
-      }
-      
-      setView("tracker");
-      setIsRestoringWorkout(false);
+        
+        setView("tracker");
+        setIsRestoringWorkout(false);
+      }).catch((error) => {
+        console.error("Failed to restore workout:", error);
+        setIsRestoringWorkout(false);
+      });
+    } else {
+      restorationAttemptedRef.current = true;
     }
-  }, [workoutLoading, workoutPlan?.id, isRestoringWorkout, handleReplaceWorkoutPlan]);
-
-  useEffect(() => {
-    void restoreWorkoutState();
-  }, [restoreWorkoutState]);
+  }, [workoutLoading, workoutPlan?.id]);
 
   // Persist workout state whenever it changes
   useEffect(() => {
